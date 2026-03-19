@@ -1,0 +1,16 @@
+# API keys and environment files
+*.env
+.env
+config.js
+api-keys.js
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# VS Code
+.vscode/
+
+# Node (if ever used)
+node_modules/
