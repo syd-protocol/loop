@@ -16,8 +16,8 @@
                 "row": 78,
                 "toMap": "neighbourhood",
                 "toSpawn": {
-                    "col": 30,
-                    "row": 2
+                    "col": 10,
+                    "row": 3
                 },
                 "label": "Front Door \u2014 Exit to Neighbourhood"
             }

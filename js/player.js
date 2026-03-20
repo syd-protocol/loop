@@ -136,12 +136,9 @@ const Player = (() => {
             const sc = Math.floor((_x + RENDER_W / 2) / ts);
             const sr = Math.floor((_y + RENDER_H / 2) / ts);
 
-            console.log(`[tap] dest=(${dc},${dr}) solid=${solid} player=(${sc},${sr}) px=(${_x.toFixed(0)},${_y.toFixed(0)}) cam=(${G.camera.x.toFixed(0)},${G.camera.y.toFixed(0)}) scale=${G.scale.toFixed(2)}`);
-
             if (solid) return;
 
             const path = _bfs(sc, sr, dc, dr);
-            console.log(`[tap] BFS → ${path.length} steps`);
 
             if (path.length > 0) {
                 _path = path;
@@ -175,14 +172,7 @@ const Player = (() => {
         if (_keys['ArrowLeft']  || _keys['a'] || _keys['A']) dx -= 1;
         if (_keys['ArrowRight'] || _keys['d'] || _keys['D']) dx += 1;
         if (dx === 0 && dy === 0) return false;
-        if (!_keyboardLoggedOnce) {
-            _keyboardLoggedOnce = true;
-            const ts = World.tileSize();
-            const col = Math.floor((_x + RENDER_W/2) / ts);
-            const row = Math.floor((_y + RENDER_H/2) / ts);
-            const ws = World.worldSize();
-            console.log(`[key] first move: dx=${dx} dy=${dy} tile=(${col},${row}) px=(${_x.toFixed(0)},${_y.toFixed(0)}) world=${ws.width}x${ws.height} isSolid=${World.isSolid(col,row)}`);
-        }
+
 
         /* Normalise diagonal */
         const len = Math.sqrt(dx * dx + dy * dy);
