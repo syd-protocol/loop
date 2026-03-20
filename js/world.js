@@ -40,7 +40,7 @@ const World = (() => {
     let _transitions = new Map(); // "col,row" → transition definition
 
     /* Tiles that block movement */
-    const SOLID_TILES = new Set(['wall', 'w', 'W', 'desk', 'D', 'bed', 'B', 'bookshelf', 'K']);
+    const SOLID_TILES = new Set(['wall', 'w', 'W', 'desk', 'D', 'bed', 'B', 'bookshelf', 'K', 'lamp', 'l', 'stall', 'S', 's', 'plant', 'n']);
 
     /* ── Tile image cache ───────────────────────────────────────── */
     const _imageCache = new Map();
