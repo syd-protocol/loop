@@ -119,9 +119,12 @@ function updateCamera() {
     const targetX = G.player.x + G.player.width  / 2 - G.viewW / 2;
     const targetY = G.player.y + G.player.height / 2 - G.viewH / 2;
 
-    /* Clamp so camera never shows outside map bounds */
-    G.camera.x = Math.max(0, Math.min(targetX, world.width  - G.viewW));
-    G.camera.y = Math.max(0, Math.min(targetY, world.height - G.viewH));
+    /* Clamp camera so it never shows outside the map.
+       If the world is smaller than the viewport on an axis, centre it. */
+    const maxCamX = Math.max(0, world.width  - G.viewW);
+    const maxCamY = Math.max(0, world.height - G.viewH);
+    G.camera.x = Math.max(0, Math.min(targetX, maxCamX));
+    G.camera.y = Math.max(0, Math.min(targetY, maxCamY));
 }
 
 /* ── FPS COUNTER ─────────────────────────────────────────────────── */
