@@ -60,53 +60,11 @@ const World = (() => {
         return tileKey[letter] ?? 'floor'; // unknown tiles default to floor
     }
 
-    /* ── Tile colour map — base colours per tile type ──────────── */
-    /*
-       At the game's 16px tile size, tileset PNG textures (352×384 source)
-       scale down to near-solid colours. These base fills give each tile
-       type a clear, readable identity at small scale. The PNG is then
-       composited on top at reduced opacity for texture detail.
-    */
-    /* ── Tile rendering strategy ────────────────────────────────────
-       FLOOR TILES (floor, ground, path, wall) render as SOLID COLOUR ONLY.
-       The tileset PNG has transparent cell gaps that show the base fill as
-       a dark grid when composited. Solid colour = clean seamless floors.
-
-       OBJECT TILES (desk, bed, bookshelf, door, window, stall, lamp, plant)
-       render as PNG ONLY. These are individual objects — transparent gaps
-       around them are fine and expected.
+    /* ── Tile rendering ─────────────────────────────────────────────
+       All tiles are painted by TilePainter (js/tile-painter.js) using
+       canvas drawing primitives. No PNG tilesets used for tile rendering.
+       This eliminates grid artifacts and gives full colour/style control.
     ── */
-    const TILE_COLOURS = {
-        // Interior — warm, lived-in
-        'floor':      '#d4a855',   // warm honey wood — solid, seamless
-        'wall':       '#6a7a90',   // cool blue-grey stone — solid boundary
-        'desk':       null,        // object — PNG only
-        'bed':        null,        // object — PNG only
-        'bookshelf':  null,        // object — PNG only
-        'door':       '#c89040',   // warm gold base + PNG overlay
-        'window':     null,        // object — PNG only
-        // Exterior — bright, peaceful daytime
-        'ground':     '#5ab832',   // Zelda bright grass — solid, seamless
-        'path':       '#c8a050',   // warm sandstone — solid, seamless
-        'stall':      null,        // object — PNG only
-        'lamp':       null,        // object — PNG only
-        'plant':      null,        // object — PNG only
-        // Fallback
-        'default':    '#5ab832',
-    };
-
-    /* Tiles that render as solid colour only — no PNG composite */
-    const SOLID_COLOUR_TILES = new Set([
-        'floor', 'ground', 'path', 'wall'
-    ]);
-
-    function _tileColour(tileName) {
-        return TILE_COLOURS[tileName] ?? TILE_COLOURS['default'];
-    }
-
-    function _isSolidColourTile(tileName) {
-        return SOLID_COLOUR_TILES.has(tileName);
-    }
 
     /* ── Build the off-screen buffer for a loaded map ───────────── */
     function _buildBuffer(mapDef, tilesetImg, spriteMapEntry) {
@@ -130,57 +88,22 @@ const World = (() => {
 
         bCtx.imageSmoothingEnabled = false;
 
-        const tw = spriteMapEntry.tileWidth;
-        const th = spriteMapEntry.tileHeight;
-
-        /* Draw every tile */
+        /* Draw every tile using TilePainter — canvas-drawn, no PNG grid artifacts */
         for (let r = 0; r < rows; r++) {
             const rowStr = mapDef.tiles[r];
             const cells  = rowStr.trim().split(/\s+/);
             for (let c = 0; c < cols; c++) {
                 const letter   = cells[c] ?? 'f';
                 const tileName = _resolveTileName(letter, mapDef.tileKey);
-                const tileCoords = spriteMapEntry.tiles[tileName];
+                const px = c * tileSize;
+                const py = r * tileSize;
 
-                if (!tileCoords) {
-                    /* Unknown tile — draw a magenta error square */
-                    bCtx.fillStyle = '#FF00FF';
-                    bCtx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
-                    continue;
-                }
+                /* Exterior 'wall' letter maps to exterior wall painter */
+                const painterKey = (mapDef.tileset === 'tileset-exterior' && tileName === 'wall')
+                    ? 'extwall'
+                    : tileName;
 
-                if (_isSolidColourTile(tileName)) {
-                    /* ── FLOOR / GROUND / PATH / WALL ───────────────────────
-                       Pure solid colour. No PNG composite.
-                       The tileset PNG has transparent cell gaps that render
-                       as a dark grid when composited at small scale.
-                       Solid flat colour gives clean seamless surfaces —
-                       exactly how Zelda's floors and grass work. */
-                    bCtx.fillStyle = _tileColour(tileName);
-                    bCtx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
-
-                } else {
-                    /* ── OBJECT TILES ────────────────────────────────────────
-                       PNG only. These are furniture, doors, windows, stalls —
-                       individual objects where transparent edges are expected.
-                       Draw the PNG source at full alpha, no base fill needed. */
-                    bCtx.globalAlpha = 1.0;
-                    bCtx.drawImage(
-                        tilesetImg,
-                        tileCoords.x, tileCoords.y, tw, th,
-                        c * tileSize, r * tileSize, tileSize, tileSize
-                    );
-                    bCtx.globalAlpha = 1.0;
-
-                    /* Door: add warm gold highlight so exits read as inviting */
-                    if (tileName === 'door') {
-                        bCtx.fillStyle = 'rgba(220, 170, 40, 0.45)';
-                        bCtx.fillRect(
-                            c * tileSize + 4, r * tileSize,
-                            tileSize - 8, tileSize - 2
-                        );
-                    }
-                }
+                TilePainter.paint(bCtx, painterKey, px, py, tileSize);
             }
         }
 
