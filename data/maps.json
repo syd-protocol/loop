@@ -130,11 +130,11 @@
         "transitions": [
             {
                 "col": 10,
-                "row": 1,
+                "row": 2,
                 "toMap": "home-flat",
                 "toSpawn": {
                     "col": 10,
-                    "row": 13
+                    "row": 77
                 },
                 "label": "Home"
             }
@@ -143,7 +143,7 @@
         "operatives": [],
         "tiles": [
             "W W W W W W W W W W W W W W W W W W W W W W W W W W W W W W",
-            "W g g g g g g g g g d g g g g g g g g g g g g g g g g g g W",
+            "W g g g g g g g g g g g g g g g g g g g g g g g g g g g g W",
             "W g g g g g g g g g g g g g g g g g g g g g g g g g g g g W",
             "W g p p p p p p p p p p p p p p p p p p p p p p p p p g g W",
             "W g p g g g g g g g g g g g g g g g g g g g g g g p g g g W",
