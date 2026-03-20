@@ -61,6 +61,10 @@ const G = {
         luck:         0    // Derived: avg of above four
     },
 
+    /* Viewport size in internal (canvas) pixels — updated by resizeCanvas() */
+    viewW: 320,
+    viewH: 180,
+
     /* Flags */
     ready:    false,    // True after all assets loaded
     paused:   false,
@@ -70,43 +74,40 @@ const G = {
 function resizeCanvas() {
     const canvas = G.canvas;
 
-    /*
-       clientWidth/Height on the documentElement is the most reliable
-       cross-browser measurement of the actual visible viewport, correctly
-       excluding browser chrome (address bar, navigation) on mobile.
-       window.innerHeight is unreliable on iOS Safari and some Android
-       browsers — it includes or excludes the browser UI inconsistently.
-    */
     const winW = document.documentElement.clientWidth;
     const winH = document.documentElement.clientHeight;
 
     /*
-       Scale the 320×180 canvas to fill the window while preserving
-       the 16:9 aspect ratio. Math.min ensures neither axis overflows.
+       The game canvas fills the FULL viewport.
+       On portrait mobile this means the internal resolution is taller
+       than 320×180 — we scale 320px wide and let the height be whatever
+       the viewport gives us. The world camera handles what is visible.
+       This removes all black bars on any screen shape.
+
+       Internal resolution: always 320px wide.
+       Height: derived from viewport aspect ratio so pixels stay square.
     */
-    const scaleX = winW / CANVAS_W;
-    const scaleY = winH / CANVAS_H;
-    const scale  = Math.min(scaleX, scaleY);
+    const scale   = winW / CANVAS_W;               // fit width exactly
+    const cssW    = winW;
+    const cssH    = winH;
+    const internalH = Math.ceil(winH / scale);     // internal px height
 
-    const cssW = Math.floor(CANVAS_W * scale);
-    const cssH = Math.floor(CANVAS_H * scale);
+    /* Update internal constants so camera and rendering use correct size */
+    G.viewW = CANVAS_W;
+    G.viewH = internalH;
 
-    /* Set the internal drawing resolution (must set attributes, not style) */
     canvas.width  = CANVAS_W;
-    canvas.height = CANVAS_H;
-
-    /*
-       Set CSS display size on BOTH axes explicitly.
-       The browser applies intrinsic aspect-ratio from the canvas
-       width/height attributes — if we only set one CSS dimension, the
-       browser computes the other via that ratio, which conflicts with
-       our JS calculation and produces the wrong size.
-       Setting both locks out the browser's intrinsic sizing entirely.
-    */
+    canvas.height = internalH;
     canvas.style.width  = `${cssW}px`;
     canvas.style.height = `${cssH}px`;
 
     G.scale = scale;
+
+    console.log(
+        `[resize] viewport=${winW}×${winH} ` +
+        `canvas=${CANVAS_W}×${internalH} internal ` +
+        `css=${cssW}×${cssH}px scale=${scale.toFixed(3)}`
+    );
 }
 
 /* ── CAMERA ──────────────────────────────────────────────────────── */
@@ -114,13 +115,13 @@ function updateCamera() {
     const world = World.worldSize();
     if (!world.width) return;
 
-    /* Centre camera on player */
-    const targetX = G.player.x + G.player.width  / 2 - CANVAS_W / 2;
-    const targetY = G.player.y + G.player.height / 2 - CANVAS_H / 2;
+    /* Centre camera on player — use live viewport size */
+    const targetX = G.player.x + G.player.width  / 2 - G.viewW / 2;
+    const targetY = G.player.y + G.player.height / 2 - G.viewH / 2;
 
     /* Clamp so camera never shows outside map bounds */
-    G.camera.x = Math.max(0, Math.min(targetX, world.width  - CANVAS_W));
-    G.camera.y = Math.max(0, Math.min(targetY, world.height - CANVAS_H));
+    G.camera.x = Math.max(0, Math.min(targetX, world.width  - G.viewW));
+    G.camera.y = Math.max(0, Math.min(targetY, world.height - G.viewH));
 }
 
 /* ── FPS COUNTER ─────────────────────────────────────────────────── */
@@ -194,9 +195,9 @@ function render() {
     const ctx = G.ctx;
     ctx.imageSmoothingEnabled = false;
 
-    /* Clear */
+    /* Clear full internal canvas (height varies with viewport) */
     ctx.fillStyle = '#0D1B2A';
-    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    ctx.fillRect(0, 0, G.viewW, G.viewH);
 
     /* World tiles */
     World.draw(ctx, G.camera);
@@ -325,30 +326,36 @@ async function init() {
     initSystemWindowToggle();
 
     try {
-        /* Load data */
+        console.log('[init] Loading data...');
         const [spriteMap, mapsData] = await Promise.all([
             loadJSON('data/sprite-map.json'),
             loadJSON('data/maps.json'),
         ]);
+        console.log('[init] sprite-map.json loaded. Entries:', Object.keys(spriteMap));
+        console.log('[init] maps.json loaded. Maps:', Object.keys(mapsData));
 
         /* Initialise world */
         World.init(spriteMap, mapsData);
+        console.log('[init] Loading map:', G.mapId);
         await World.loadMap(G.mapId);
+        console.log('[init] Map loaded. Size:', World.worldSize());
 
         /* Set player to spawn point */
         const spawn = World.currentMap.playerSpawn;
         const ts    = World.tileSize();
         G.player.x  = spawn.col * ts;
         G.player.y  = spawn.row * ts;
+        console.log(`[init] Player spawn: col=${spawn.col} row=${spawn.row} px=(${G.player.x},${G.player.y})`);
+        console.log(`[init] Viewport: ${G.viewW}×${G.viewH} internal, scale=${G.scale.toFixed(3)}`);
 
         G.ready    = true;
         G.lastTime = performance.now();
 
-        console.log('[/loop] Initialised. Starting game loop.');
+        console.log('[init] ✓ Ready. Game loop starting.');
         requestAnimationFrame(tick);
 
     } catch (err) {
-        console.error('[/loop] Init failed:', err);
+        console.error('[init] ✗ Failed:', err);
         showFatalError(err.message);
     }
 }
