@@ -364,6 +364,104 @@ body {
     letter-spacing: 1px;
 }
 
+/* ── SYSTEM WINDOW — STEP 3 SECTIONS ────────────────────────────────── */
+
+.sw-section {
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(74, 77, 94, 0.3);
+}
+
+.sw-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.sw-header {
+    padding-bottom: 10px;
+}
+
+/* HP bar — wider track */
+.sw-hp-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.sw-hp-track {
+    flex: 1;
+    height: 8px;
+}
+
+.sw-hp-fill {
+    height: 100%;
+    border-radius: 1px;
+    transition: width 0.5s ease;
+}
+
+/* Animated bars — width transitions from 0 to target */
+.sw-bar-animate {
+    transition: width 0.5s ease;
+}
+
+/* Inline colour helpers used by SYD lines */
+.syd-line .gold  { color: var(--execution-gold); }
+.syd-line.strength { color: var(--strength); }
+
+/* Footer placeholder lines */
+.sw-footer .syd-line {
+    opacity: 0.4;
+}
+
+/* ── CLASS SELECTION GRID ─────────────────────────────────────────── */
+.sw-class-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.sw-class-btn {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px;
+    background: rgba(0, 242, 255, 0.04);
+    border: 1px solid var(--cls-colour, var(--panel-border));
+    border-radius: var(--panel-radius);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s, border-color 0.15s;
+    min-height: var(--tap-target);
+}
+
+.sw-class-btn:hover,
+.sw-class-btn:focus-visible {
+    background: rgba(0, 242, 255, 0.08);
+    border-color: var(--cls-colour, var(--panel-border-hot));
+    outline: none;
+}
+
+.sw-class-btn:active {
+    background: rgba(0, 242, 255, 0.14);
+}
+
+.sw-class-name {
+    font-size: var(--font-size-sm);
+    letter-spacing: 2px;
+    color: var(--cls-colour, var(--loop-cyan));
+    font-family: var(--font-mono);
+}
+
+.sw-class-desc {
+    font-size: var(--font-size-xs);
+    color: var(--stagnation-grey);
+    letter-spacing: 1px;
+    font-family: var(--font-mono);
+    line-height: 1.5;
+}
+
 /* ── MAP TRANSITION OVERLAY ─────────────────────────────────────────── */
 #transition-overlay {
     position: absolute;

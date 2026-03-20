@@ -1,0 +1,5 @@
+This chat is getting longer now, we'd need to move to a new chat to continue. Can you give me a handoff proto use in the other chat as well as context of how you (not me) have been working and thinking through and designing the solutions you've come up with so that in the next chat it thinks and works like you and is as if we are continuing there, kinda like a profile.md or skills.md or so for you here along with the handoff prompt and any other thing I'll need like the files to share in the other chat and the info and context of how I work and info and context of the project and work done so far as well as the direction and things done and todo.
+
+
+
+Also include in the prompt that github commits should always be shared and what I should look out for or expect to see or test/check with each changes should also be shared.

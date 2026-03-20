@@ -43,23 +43,16 @@ const G = {
     /* Current map */
     mapId: 'home-flat',
 
-    /* Player position (world pixels) — placeholder until player.js */
+    /* Player state — position managed by player.js */
     player: {
-        x: 48,          // col 3 × 16
-        y: 112,         // row 7 × 16
-        width:  16,
-        height: 16,
-        speed:  60,     // pixels per second
+        x: 320, y: 160,
+        width: 16, height: 16,
+        class: null,    // 'architect' | 'warlord' | 'herald' — set in SystemWindow
+        rank:  null,    // string rank name, set when class chosen
     },
 
-    /* Stats — placeholder values until stats.js */
-    stats: {
-        intelligence: 30,
-        strength:     25,
-        charisma:     20,
-        dexterity:    15,
-        luck:         0    // Derived: avg of above four
-    },
+    /* Stats owned by stats.js — G.stats is a read cache updated by Stats */
+    stats: {},
 
     /* Viewport size in internal (canvas) pixels — updated by resizeCanvas() */
     viewW: 320,
@@ -197,52 +190,14 @@ function render() {
 /* Keyboard and tap-to-move handled by player.js (Step 2) */
 
 /* ── SYSTEM WINDOW TOGGLE ────────────────────────────────────────── */
+/* Button wiring — SystemWindow.init() handles keyboard shortcuts (Tab/Esc) */
 function initSystemWindowToggle() {
-    const btn    = document.getElementById('btn-system');
-    const panel  = document.getElementById('system-window');
-    const close  = document.getElementById('btn-system-close');
-
-    btn.addEventListener('click', () => {
-        panel.hidden = !panel.hidden;
-        if (!panel.hidden) {
-            /* Step 3 will call SystemWindow.render() here */
-            renderSystemWindowPlaceholder();
-        }
+    document.getElementById('btn-system').addEventListener('click', () => {
+        SystemWindow.isOpen() ? SystemWindow.close() : SystemWindow.open();
     });
-
-    close.addEventListener('click', () => {
-        panel.hidden = true;
+    document.getElementById('btn-system-close').addEventListener('click', () => {
+        SystemWindow.close();
     });
-}
-
-function renderSystemWindowPlaceholder() {
-    const body = document.getElementById('system-window-body');
-    const s = G.stats;
-    s.luck = Math.round((s.intelligence + s.strength + s.charisma + s.dexterity) / 4);
-
-    body.innerHTML = `
-        <p class="syd-line syd-new">[ SYSTEM ONLINE ]</p>
-        <p class="syd-line dim">MAP: ${G.mapId.toUpperCase()}</p>
-        <br>
-        <p class="syd-line">[ STATS ]</p>
-        ${statBar('INTELLIGENCE', s.intelligence, 'intelligence')}
-        ${statBar('STRENGTH',     s.strength,     'strength')}
-        ${statBar('CHARISMA',     s.charisma,     'charisma')}
-        ${statBar('DEXTERITY',    s.dexterity,    'dexterity')}
-        ${statBar('LUCK',         s.luck,         'luck')}
-    `;
-}
-
-function statBar(label, value, cls) {
-    return `
-        <div class="stat-row">
-            <span class="stat-label">${label}</span>
-            <div class="stat-bar-track">
-                <div class="stat-bar-fill ${cls}" style="width:${value}%"></div>
-            </div>
-            <span class="stat-value">${value}</span>
-        </div>
-    `;
 }
 
 /* ── ASSET LOADING ───────────────────────────────────────────────── */
@@ -279,6 +234,9 @@ async function init() {
         await World.loadMap(G.mapId);
         console.log('[init] Map loaded. Size:', World.worldSize());
 
+        /* Initialise stat model */
+        Stats.init();
+
         /* Initialise player sprite and input */
         await Player.init(spriteMap);
 
@@ -287,6 +245,9 @@ async function init() {
         Player.setSpawn(spawn.col, spawn.row);
         console.log(`[init] Player spawn: col=${spawn.col} row=${spawn.row} px=(${G.player.x},${G.player.y})`);
         console.log(`[init] Viewport: ${G.viewW}×${G.viewH} internal, scale=${G.scale.toFixed(3)}`);
+
+        /* Initialise System Window */
+        SystemWindow.init();
 
         G.ready    = true;
         G.lastTime = performance.now();
