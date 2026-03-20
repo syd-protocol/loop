@@ -364,6 +364,17 @@ body {
     letter-spacing: 1px;
 }
 
+/* ── MAP TRANSITION OVERLAY ─────────────────────────────────────────── */
+#transition-overlay {
+    position: absolute;
+    inset: 0;
+    background: #0A0B10;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 50;
+    transition: opacity 0.3s ease;
+}
+
 /* ── ANIMATIONS ───────────────────────────────────────────────────── */
 @keyframes scanline {
     0%   { background-position: 0 0; }

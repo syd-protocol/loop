@@ -150,22 +150,7 @@ function updateDevTile() {
     if (el) el.textContent = `${col},${row}`;
 }
 
-/* ── DRAW PLAYER PLACEHOLDER ─────────────────────────────────────── */
-/*
-   Step 1 placeholder — draws a coloured rectangle where the player is.
-   Replaced by full sprite rendering in Step 2 (player.js).
-*/
-function drawPlayerPlaceholder(ctx) {
-    const px = Math.round(G.player.x - G.camera.x);
-    const py = Math.round(G.player.y - G.camera.y);
-
-    ctx.fillStyle = '#00F2FF';
-    ctx.fillRect(px, py, G.player.width, G.player.height);
-
-    /* Facing indicator — small dot at top */
-    ctx.fillStyle = '#0A0B10';
-    ctx.fillRect(px + 6, py + 2, 4, 4);
-}
+/* Player drawing handled by Player.draw() in player.js */
 
 /* ── GAME LOOP ───────────────────────────────────────────────────── */
 function tick(timestamp) {
@@ -187,7 +172,7 @@ function tick(timestamp) {
 }
 
 function update(dt) {
-    /* Step 2 will add: Player.update(dt) */
+    Player.update(dt);       // movement, animation, transitions
     /* Step 5 will add: NPC.update(dt) */
 
     updateCamera();
@@ -205,60 +190,11 @@ function render() {
     /* World tiles */
     World.draw(ctx, G.camera);
 
-    /* Player placeholder (replaced in Step 2) */
-    drawPlayerPlaceholder(ctx);
+    /* Player sprite */
+    Player.draw(ctx, G.camera);
 }
 
-/* ── BASIC KEYBOARD MOVEMENT (Step 1 stub) ───────────────────────── */
-/*
-   Minimal WASD/arrow key movement so the world is navigable immediately.
-   Step 2 (player.js) replaces this with full collision + animation.
-*/
-const _keys = {};
-window.addEventListener('keydown', e => { _keys[e.key] = true; });
-window.addEventListener('keyup',   e => { _keys[e.key] = false; });
-
-function _applyKeyboardMovement(dt) {
-    const speed  = G.player.speed * (dt / 1000);
-    const ts     = World.tileSize();
-    let { x, y } = G.player;
-
-    if (_keys['ArrowUp']    || _keys['w'] || _keys['W']) y -= speed;
-    if (_keys['ArrowDown']  || _keys['s'] || _keys['S']) y += speed;
-    if (_keys['ArrowLeft']  || _keys['a'] || _keys['A']) x -= speed;
-    if (_keys['ArrowRight'] || _keys['d'] || _keys['D']) x += speed;
-
-    /* Simple tile collision check */
-    const hw = G.player.width / 2;
-    const hh = G.player.height / 2;
-
-    /* Check horizontal */
-    const newCol = Math.floor((x + hw) / ts);
-    const curRow = Math.floor((G.player.y + hh) / ts);
-    if (!World.isSolid(newCol, curRow)) {
-        G.player.x = x;
-    }
-
-    /* Check vertical */
-    const newRow = Math.floor((G.player.y + hh + (y - G.player.y)) / ts);
-    const curCol = Math.floor((G.player.x + hw) / ts);
-    if (!World.isSolid(curCol, newRow)) {
-        G.player.y = y;
-    }
-
-    /* Clamp to world bounds */
-    const world = World.worldSize();
-    G.player.x = Math.max(ts, Math.min(G.player.x, world.width  - ts - G.player.width));
-    G.player.y = Math.max(ts, Math.min(G.player.y, world.height - ts - G.player.height));
-}
-
-/* Patch update() to include keyboard movement */
-const _originalUpdate = update;
-function update(dt) {
-    _applyKeyboardMovement(dt);
-    updateCamera();
-    updateDevTile();
-}
+/* Keyboard and tap-to-move handled by player.js (Step 2) */
 
 /* ── SYSTEM WINDOW TOGGLE ────────────────────────────────────────── */
 function initSystemWindowToggle() {
@@ -343,11 +279,12 @@ async function init() {
         await World.loadMap(G.mapId);
         console.log('[init] Map loaded. Size:', World.worldSize());
 
+        /* Initialise player sprite and input */
+        await Player.init(spriteMap);
+
         /* Set player to spawn point */
         const spawn = World.currentMap.playerSpawn;
-        const ts    = World.tileSize();
-        G.player.x  = spawn.col * ts;
-        G.player.y  = spawn.row * ts;
+        Player.setSpawn(spawn.col, spawn.row);
         console.log(`[init] Player spawn: col=${spawn.col} row=${spawn.row} px=(${G.player.x},${G.player.y})`);
         console.log(`[init] Viewport: ${G.viewW}×${G.viewH} internal, scale=${G.scale.toFixed(3)}`);
 
