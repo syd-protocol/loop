@@ -177,7 +177,7 @@ function render() {
     ctx.imageSmoothingEnabled = false;
 
     /* Clear full internal canvas (height varies with viewport) */
-    ctx.fillStyle = '#0D1B2A';
+    ctx.fillStyle = '#5a9040';   /* warm exterior green — no dark void at map edges */
     ctx.fillRect(0, 0, G.viewW, G.viewH);
 
     /* World tiles */

@@ -68,22 +68,28 @@ const World = (() => {
        composited on top at reduced opacity for texture detail.
     */
     const TILE_COLOURS = {
-        // Interior
-        'floor':      '#2c2016',   // warm dark wood
-        'wall':       '#1c2030',   // dark blue-grey
-        'desk':       '#1a3a5c',   // deep blue (cyan monitor glow)
-        'bed':        '#1a1f2e',   // very dark navy
-        'bookshelf':  '#1a2a1a',   // dark green-grey
-        'door':       '#003a3a',   // visible teal — distinct from wall, marks an exit
-        'window':     '#0d3a4a',   // dark teal (cyan light behind glass)
-        // Exterior
-        'ground':     '#0d1520',   // deep navy ground
-        'path':       '#1e2535',   // slightly lighter path
-        'stall':      '#2a2000',   // warm dark (yellow awning hint)
-        'lamp':       '#0a1a2a',   // very dark (cyan glow)
-        'plant':      '#0a1a0a',   // very dark green
+        // Interior — warm, lived-in amber tones
+        // Base fills show through the PNG at high alpha to give each tile
+        // warmth and identity. PNG is drawn at 0.85 alpha so the artwork
+        // reads clearly while the base tint keeps the palette cohesive.
+        'floor':      '#c8a870',   // warm honey-wood — the main living surface
+        'wall':       '#8a9bb0',   // soft blue-grey stone — readable, not harsh
+        'desk':       '#5a8ab0',   // cool blue — cyan monitor screen presence
+        'bed':        '#6a7a9a',   // muted blue-grey — restful, soft
+        'bookshelf':  '#6a8a5a',   // warm green — full shelves, organic feel
+        'door':       '#c8a050',   // warm gold — exits read as inviting, not alarming
+        'window':     '#a0d4e8',   // soft sky blue — daylight through glass
+        // Exterior — bright, peaceful daytime neighbourhood
+        // Think Zelda: Link's Awakening or A Link to the Past — vivid grass,
+        // warm stone paths, sunlit details. Cheerful and welcoming.
+        'ground':     '#7ec850',   // bright daylight grass green
+        'path':       '#d4b882',   // warm sandy stone path
+        'wall':       '#9aacbe',   // light stone building wall
+        'stall':      '#e8c030',   // warm sunlit yellow — market stall awning
+        'lamp':       '#d4c070',   // warm brass lamp post
+        'plant':      '#3aaa30',   // vivid green bush/plant
         // Fallback
-        'default':    '#141820',
+        'default':    '#8aaa70',
     };
 
     function _tileColour(tileName) {
@@ -140,7 +146,7 @@ const World = (() => {
                 bCtx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
 
                 /* Composite PNG texture at reduced alpha for detail overlay */
-                bCtx.globalAlpha = 0.55;
+                bCtx.globalAlpha = 0.85;
                 bCtx.drawImage(
                     tilesetImg,
                     tileCoords.x, tileCoords.y, tw, th,
@@ -148,14 +154,14 @@ const World = (() => {
                 );
                 bCtx.globalAlpha = 1.0;
 
-                /* Door marker — cyan arch so exits are clearly visible at 16px */
+                /* Door marker — warm gold highlight so exits read as inviting */
                 if (tileName === 'door') {
-                    bCtx.fillStyle = 'rgba(0, 242, 255, 0.5)';
+                    bCtx.fillStyle = 'rgba(220, 170, 40, 0.55)';
                     bCtx.fillRect(
-                        c * tileSize + 4, r * tileSize,
-                        tileSize - 8, tileSize - 2
+                        c * tileSize + 3, r * tileSize,
+                        tileSize - 6, tileSize - 2
                     );
-                    bCtx.fillStyle = 'rgba(0, 242, 255, 0.15)';
+                    bCtx.fillStyle = 'rgba(255, 210, 80, 0.2)';
                     bCtx.fillRect(
                         c * tileSize, r * tileSize,
                         tileSize, tileSize
