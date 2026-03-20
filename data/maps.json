@@ -13,7 +13,7 @@
         "transitions": [
             {
                 "col": 10,
-                "row": 20,
+                "row": 19,
                 "toMap": "neighbourhood",
                 "toSpawn": {
                     "col": 30,
