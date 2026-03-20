@@ -71,28 +71,38 @@ function resizeCanvas() {
     const canvas = G.canvas;
 
     /*
-       Use dvh/dvw if available (accounts for mobile browser chrome).
-       Fall back to window.innerWidth/Height.
+       clientWidth/Height on the documentElement is the most reliable
+       cross-browser measurement of the actual visible viewport, correctly
+       excluding browser chrome (address bar, navigation) on mobile.
+       window.innerHeight is unreliable on iOS Safari and some Android
+       browsers — it includes or excludes the browser UI inconsistently.
     */
-    const winW = window.innerWidth;
-    const winH = window.innerHeight;
+    const winW = document.documentElement.clientWidth;
+    const winH = document.documentElement.clientHeight;
 
     /*
        Scale the 320×180 canvas to fill the window while preserving
        the 16:9 aspect ratio. Math.min ensures neither axis overflows.
     */
-    const scaleX = winW  / CANVAS_W;
+    const scaleX = winW / CANVAS_W;
     const scaleY = winH / CANVAS_H;
     const scale  = Math.min(scaleX, scaleY);
 
     const cssW = Math.floor(CANVAS_W * scale);
     const cssH = Math.floor(CANVAS_H * scale);
 
-    /* Set the internal drawing resolution */
+    /* Set the internal drawing resolution (must set attributes, not style) */
     canvas.width  = CANVAS_W;
     canvas.height = CANVAS_H;
 
-    /* Set the CSS display size explicitly on both axes */
+    /*
+       Set CSS display size on BOTH axes explicitly.
+       The browser applies intrinsic aspect-ratio from the canvas
+       width/height attributes — if we only set one CSS dimension, the
+       browser computes the other via that ratio, which conflicts with
+       our JS calculation and produces the wrong size.
+       Setting both locks out the browser's intrinsic sizing entirely.
+    */
     canvas.style.width  = `${cssW}px`;
     canvas.style.height = `${cssH}px`;
 
