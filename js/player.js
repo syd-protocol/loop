@@ -24,11 +24,11 @@ const Player = (() => {
        8 frames per direction — full smooth walk cycle
        Row 0: walk-down (front)  Row 1: walk-up (back)
        Row 2: walk-left          Row 3: walk-right
-       Rendered at 32×32px in the world (one tile, matches tileSize)
+       Rendered at 28×32px in the world (natural portrait ratio, centred in 32×32 tile)
     */
     const SPRITE_KEY  = 'player';
-    const RENDER_W    = 32;   // matches tileSize — player occupies one full tile
-    const RENDER_H    = 32;   // matches tileSize — player occupies one full tile
+    const RENDER_W    = 32;   // tile size — collision and camera use this
+    const RENDER_H    = 32;   // tile size — collision and camera use this
     const WALK_FRAMES = 8;
     const WALK_FPS    = 8;
     const WALK_MS     = 1000 / WALK_FPS;   // ms per animation frame
@@ -343,8 +343,16 @@ const Player = (() => {
         const destX = Math.round(_x - camera.x);
         const destY = Math.round(_y - camera.y);
 
+        /* Preserve sprite's natural portrait proportions (source 176x192).
+           Drawing squished into a square creates distortion and edge artifacts.
+           We draw at the natural ratio (28x32) centred within the tile. */
+        const drawH  = RENDER_H;
+        const drawW  = Math.round(drawH * (_fw / _fh));   // ~28px at 32 tile
+        const offsetX = Math.round((RENDER_W - drawW) / 2);
+
         ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(_img, srcX, srcY, _fw, _fh, destX, destY, RENDER_W, RENDER_H);
+        ctx.drawImage(_img, srcX, srcY, _fw, _fh,
+            destX + offsetX, destY, drawW, drawH);
 
         /* Tap destination indicator — cyan tile outline */
         if (_pathTarget) {

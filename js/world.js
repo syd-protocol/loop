@@ -67,30 +67,45 @@ const World = (() => {
        type a clear, readable identity at small scale. The PNG is then
        composited on top at reduced opacity for texture detail.
     */
+    /* ── Tile rendering strategy ────────────────────────────────────
+       FLOOR TILES (floor, ground, path, wall) render as SOLID COLOUR ONLY.
+       The tileset PNG has transparent cell gaps that show the base fill as
+       a dark grid when composited. Solid colour = clean seamless floors.
+
+       OBJECT TILES (desk, bed, bookshelf, door, window, stall, lamp, plant)
+       render as PNG ONLY. These are individual objects — transparent gaps
+       around them are fine and expected.
+    ── */
     const TILE_COLOURS = {
-        // Interior — warm, lived-in amber tones.
-        // At tileSize=32 the PNG artwork reads clearly, so base colours
-        // are softer tints that complement the artwork rather than compete.
-        'floor':      '#c8a464',   // warm honey wood
-        'wall':       '#7a8fa8',   // soft blue-grey stone
-        'desk':       '#4a7aaa',   // cool blue — monitor screen presence
-        'bed':        '#5a6a8a',   // muted blue-grey — restful
-        'bookshelf':  '#5a7a4a',   // warm green — full shelves
-        'door':       '#c89040',   // warm gold — exits feel inviting
-        'window':     '#90c8e0',   // soft sky — daylight through glass
-        // Exterior — bright, peaceful daytime.
-        // Zelda-inspired: vivid grass, warm stone paths, sunlit details.
-        'ground':     '#68c040',   // bright daylight grass
-        'path':       '#c8a864',   // warm sandy stone path
-        'stall':      '#e0b820',   // sunlit yellow awning
-        'lamp':       '#c8b050',   // warm brass lamp post
-        'plant':      '#30a020',   // vivid green bush
+        // Interior — warm, lived-in
+        'floor':      '#d4a855',   // warm honey wood — solid, seamless
+        'wall':       '#6a7a90',   // cool blue-grey stone — solid boundary
+        'desk':       null,        // object — PNG only
+        'bed':        null,        // object — PNG only
+        'bookshelf':  null,        // object — PNG only
+        'door':       '#c89040',   // warm gold base + PNG overlay
+        'window':     null,        // object — PNG only
+        // Exterior — bright, peaceful daytime
+        'ground':     '#5ab832',   // Zelda bright grass — solid, seamless
+        'path':       '#c8a050',   // warm sandstone — solid, seamless
+        'stall':      null,        // object — PNG only
+        'lamp':       null,        // object — PNG only
+        'plant':      null,        // object — PNG only
         // Fallback
-        'default':    '#80a860',
+        'default':    '#5ab832',
     };
+
+    /* Tiles that render as solid colour only — no PNG composite */
+    const SOLID_COLOUR_TILES = new Set([
+        'floor', 'ground', 'path', 'wall'
+    ]);
 
     function _tileColour(tileName) {
         return TILE_COLOURS[tileName] ?? TILE_COLOURS['default'];
+    }
+
+    function _isSolidColourTile(tileName) {
+        return SOLID_COLOUR_TILES.has(tileName);
     }
 
     /* ── Build the off-screen buffer for a loaded map ───────────── */
@@ -134,41 +149,37 @@ const World = (() => {
                     continue;
                 }
 
-                /* Per-tile base colour — makes tiles readable at small scale.
-                   The tileset PNG textures are 352×384px scaled to 16×16, so
-                   they average to near-flat colour. We draw a solid base first
-                   that gives each tile type a distinct readable appearance,
-                   then composite the PNG on top for texture detail. */
-                bCtx.fillStyle = _tileColour(tileName);
-                bCtx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
+                if (_isSolidColourTile(tileName)) {
+                    /* ── FLOOR / GROUND / PATH / WALL ───────────────────────
+                       Pure solid colour. No PNG composite.
+                       The tileset PNG has transparent cell gaps that render
+                       as a dark grid when composited at small scale.
+                       Solid flat colour gives clean seamless surfaces —
+                       exactly how Zelda's floors and grass work. */
+                    bCtx.fillStyle = _tileColour(tileName);
+                    bCtx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
 
-                /* Composite PNG texture at reduced alpha for detail overlay */
-                bCtx.globalAlpha = 0.9;
-                /* Inset 8px from each edge of the source tile to crop out
-                   the cell border/outline that the tileset PNG includes.
-                   Without this inset, those border lines scale down and
-                   render as a visible grid pattern across the whole map. */
-                const BORDER = 8;
-                bCtx.drawImage(
-                    tilesetImg,
-                    tileCoords.x + BORDER, tileCoords.y + BORDER,
-                    tw - BORDER * 2, th - BORDER * 2,
-                    c * tileSize, r * tileSize, tileSize, tileSize
-                );
-                bCtx.globalAlpha = 1.0;
+                } else {
+                    /* ── OBJECT TILES ────────────────────────────────────────
+                       PNG only. These are furniture, doors, windows, stalls —
+                       individual objects where transparent edges are expected.
+                       Draw the PNG source at full alpha, no base fill needed. */
+                    bCtx.globalAlpha = 1.0;
+                    bCtx.drawImage(
+                        tilesetImg,
+                        tileCoords.x, tileCoords.y, tw, th,
+                        c * tileSize, r * tileSize, tileSize, tileSize
+                    );
+                    bCtx.globalAlpha = 1.0;
 
-                /* Door marker — warm gold highlight so exits feel inviting */
-                if (tileName === 'door') {
-                    bCtx.fillStyle = 'rgba(220, 170, 40, 0.5)';
-                    bCtx.fillRect(
-                        c * tileSize + 4, r * tileSize,
-                        tileSize - 8, tileSize - 2
-                    );
-                    bCtx.fillStyle = 'rgba(255, 210, 80, 0.15)';
-                    bCtx.fillRect(
-                        c * tileSize, r * tileSize,
-                        tileSize, tileSize
-                    );
+                    /* Door: add warm gold highlight so exits read as inviting */
+                    if (tileName === 'door') {
+                        bCtx.fillStyle = 'rgba(220, 170, 40, 0.45)';
+                        bCtx.fillRect(
+                            c * tileSize + 4, r * tileSize,
+                            tileSize - 8, tileSize - 2
+                        );
+                    }
                 }
             }
         }
