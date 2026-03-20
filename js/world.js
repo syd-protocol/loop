@@ -51,6 +51,36 @@ const World = (() => {
         return tileKey[letter] ?? 'floor'; // unknown tiles default to floor
     }
 
+    /* ── Tile colour map — base colours per tile type ──────────── */
+    /*
+       At the game's 16px tile size, tileset PNG textures (352×384 source)
+       scale down to near-solid colours. These base fills give each tile
+       type a clear, readable identity at small scale. The PNG is then
+       composited on top at reduced opacity for texture detail.
+    */
+    const TILE_COLOURS = {
+        // Interior
+        'floor':      '#2c2016',   // warm dark wood
+        'wall':       '#1c2030',   // dark blue-grey
+        'desk':       '#1a3a5c',   // deep blue (cyan monitor glow)
+        'bed':        '#1a1f2e',   // very dark navy
+        'bookshelf':  '#1a2a1a',   // dark green-grey
+        'door':       '#1e1e28',   // near-black with slight blue
+        'window':     '#0d2a3a',   // dark teal (cyan light)
+        // Exterior
+        'ground':     '#0d1520',   // deep navy ground
+        'path':       '#1e2535',   // slightly lighter path
+        'stall':      '#2a2000',   // warm dark (yellow awning hint)
+        'lamp':       '#0a1a2a',   // very dark (cyan glow)
+        'plant':      '#0a1a0a',   // very dark green
+        // Fallback
+        'default':    '#141820',
+    };
+
+    function _tileColour(tileName) {
+        return TILE_COLOURS[tileName] ?? TILE_COLOURS['default'];
+    }
+
     /* ── Build the off-screen buffer for a loaded map ───────────── */
     function _buildBuffer(mapDef, tilesetImg, spriteMapEntry) {
         const tileSize = mapDef.tileSize;   // 16
@@ -92,18 +122,22 @@ const World = (() => {
                     continue;
                 }
 
-                /* Fill solid background first so transparent PNG areas
-                   show a neutral floor colour rather than canvas background */
-                bCtx.fillStyle = (SOLID_TILES.has(tileName) || SOLID_TILES.has(letter))
-                    ? '#1a1f2e'   // dark for walls/furniture
-                    : '#2a2318';  // warm dark for floor
+                /* Per-tile base colour — makes tiles readable at small scale.
+                   The tileset PNG textures are 352×384px scaled to 16×16, so
+                   they average to near-flat colour. We draw a solid base first
+                   that gives each tile type a distinct readable appearance,
+                   then composite the PNG on top for texture detail. */
+                bCtx.fillStyle = _tileColour(tileName);
                 bCtx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
 
+                /* Composite PNG texture at reduced alpha for detail overlay */
+                bCtx.globalAlpha = 0.55;
                 bCtx.drawImage(
                     tilesetImg,
-                    tileCoords.x, tileCoords.y, tw, th,      // source
-                    c * tileSize, r * tileSize, tileSize, tileSize  // dest (scaled to 16px)
+                    tileCoords.x, tileCoords.y, tw, th,
+                    c * tileSize, r * tileSize, tileSize, tileSize
                 );
+                bCtx.globalAlpha = 1.0;
             }
         }
 
