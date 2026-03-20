@@ -18,6 +18,15 @@
      World.currentMap               — active map definition object
 ──────────────────────────────────────────────────────────────────── */
 
+/* ── MAP REDESIGN TODO ───────────────────────────────────────────────
+   home-flat exit door currently leads from the Study (bottom of map).
+   It should exit from the Entrance Hall (top). The interior wall at
+   col=20 blocks the bottom-centre tile, so the door was moved to col=10
+   as a workaround. Proper fix: redesign the map so the front door is at
+   the top outer wall (row=0), with the entrance hall naturally leading to it.
+   See maps.json "_todo" field for full details.
+──────────────────────────────────────────────────────────────────── */
+
 const World = (() => {
 
     /* ── Private state ──────────────────────────────────────────── */
@@ -65,8 +74,8 @@ const World = (() => {
         'desk':       '#1a3a5c',   // deep blue (cyan monitor glow)
         'bed':        '#1a1f2e',   // very dark navy
         'bookshelf':  '#1a2a1a',   // dark green-grey
-        'door':       '#1e1e28',   // near-black with slight blue
-        'window':     '#0d2a3a',   // dark teal (cyan light)
+        'door':       '#003a3a',   // visible teal — distinct from wall, marks an exit
+        'window':     '#0d3a4a',   // dark teal (cyan light behind glass)
         // Exterior
         'ground':     '#0d1520',   // deep navy ground
         'path':       '#1e2535',   // slightly lighter path
@@ -138,6 +147,20 @@ const World = (() => {
                     c * tileSize, r * tileSize, tileSize, tileSize
                 );
                 bCtx.globalAlpha = 1.0;
+
+                /* Door marker — cyan arch so exits are clearly visible at 16px */
+                if (tileName === 'door') {
+                    bCtx.fillStyle = 'rgba(0, 242, 255, 0.5)';
+                    bCtx.fillRect(
+                        c * tileSize + 4, r * tileSize,
+                        tileSize - 8, tileSize - 2
+                    );
+                    bCtx.fillStyle = 'rgba(0, 242, 255, 0.15)';
+                    bCtx.fillRect(
+                        c * tileSize, r * tileSize,
+                        tileSize, tileSize
+                    );
+                }
             }
         }
 

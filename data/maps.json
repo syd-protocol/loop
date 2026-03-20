@@ -114,7 +114,15 @@
             "D": "desk",
             "B": "bed",
             "K": "bookshelf"
-        }
+        },
+        "_todo": [
+            "REDESIGN NEEDED: Exit door currently leads from the Study (bottom of map, rows 66-78).",
+            "It should lead from the Entrance Hall (top of map, rows 1-19) so the apartment flow makes sense.",
+            "The interior wall at col=20 runs rows 21-78, blocking col=20 on the bottom wall.",
+            "Suggested fix: move the entrance hall to the BOTTOM of the map (flip layout), or add a proper",
+            "hallway from the entrance to a front door on row 0 (top outer wall).",
+            "Transition is currently: col=10, row=78 (study floor) \u2192 neighbourhood col=30, row=2."
+        ]
     },
     "neighbourhood": {
         "id": "neighbourhood",

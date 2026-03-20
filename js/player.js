@@ -258,15 +258,34 @@ const Player = (() => {
         await World.loadMap(t.toMap);
         G.mapId = t.toMap;
 
-        /* Reposition */
+        /* Reposition player */
         const ts = World.tileSize();
         _x = t.toSpawn.col * ts;
         _y = t.toSpawn.row * ts;
         _facing = 'down';
-        G.camera.x = 0;
-        G.camera.y = 0;
+        _frameIndex = 0;
+        _frameTimer = 0;
+        _moving = false;
+
+        /* Sync G.player immediately so updateCamera has correct values */
         G.player.x = _x;
         G.player.y = _y;
+        G.player.width  = RENDER_W;
+        G.player.height = RENDER_H;
+
+        /* Force camera to centre on player before first frame renders.
+           Without this, G.camera stays at {0,0} for one frame, causing
+           the player to render off-screen and pointerdown to calculate
+           wrong world coordinates on the first tap. */
+        const world = World.worldSize();
+        G.camera.x = Math.max(0, Math.min(
+            _x + RENDER_W / 2 - G.viewW / 2,
+            Math.max(0, world.width  - G.viewW)
+        ));
+        G.camera.y = Math.max(0, Math.min(
+            _y + RENDER_H / 2 - G.viewH / 2,
+            Math.max(0, world.height - G.viewH)
+        ));
 
         /* Fade in */
         if (overlay) { overlay.style.opacity = '0'; }
