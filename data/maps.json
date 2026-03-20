@@ -13,13 +13,13 @@
         "transitions": [
             {
                 "col": 10,
-                "row": 19,
+                "row": 78,
                 "toMap": "neighbourhood",
                 "toSpawn": {
                     "col": 30,
                     "row": 2
                 },
-                "label": "Front Door"
+                "label": "Front Door \u2014 Exit to Neighbourhood"
             }
         ],
         "npcs": [],
@@ -104,7 +104,7 @@
             "w f f f f f f f f f f f f f f f f f f f w f f f f f f f f f f f f f f f f f f w",
             "w f f f f f f f f f f f f f f f f f f f w f f f f f f f f f f f f f f f f f f w",
             "w f f f f f f f f f f f f f f f f f f f w f f f f f f f f f f f f f f f f f f w",
-            "w w w w w w w w w w w w w w w w w w w w d w w w w w w w w w w w w w w w w w w w"
+            "w w w w w w w w w w d w w w w w w w w w w w w w w w w w w w w w w w w w w w w w"
         ],
         "tileKey": {
             "f": "floor",
