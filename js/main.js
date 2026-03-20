@@ -68,25 +68,31 @@ const G = {
 
 /* ── CANVAS SETUP ────────────────────────────────────────────────── */
 function resizeCanvas() {
-    const canvas  = G.canvas;
-    const winW    = window.innerWidth;
-    const winH    = window.innerHeight;
+    const canvas = G.canvas;
+
+    /*
+       Use dvh/dvw if available (accounts for mobile browser chrome).
+       Fall back to window.innerWidth/Height.
+    */
+    const winW = window.innerWidth;
+    const winH = window.innerHeight;
 
     /*
        Scale the 320×180 canvas to fill the window while preserving
-       aspect ratio. We use floor() to keep integer scale factors
-       where possible — this keeps pixels sharp at common screen sizes.
-       At non-integer scales, image-rendering: pixelated still looks good.
+       the 16:9 aspect ratio. Math.min ensures neither axis overflows.
     */
-    const scaleX = winW / CANVAS_W;
+    const scaleX = winW  / CANVAS_W;
     const scaleY = winH / CANVAS_H;
     const scale  = Math.min(scaleX, scaleY);
 
-    const cssW = Math.round(CANVAS_W * scale);
-    const cssH = Math.round(CANVAS_H * scale);
+    const cssW = Math.floor(CANVAS_W * scale);
+    const cssH = Math.floor(CANVAS_H * scale);
 
+    /* Set the internal drawing resolution */
     canvas.width  = CANVAS_W;
     canvas.height = CANVAS_H;
+
+    /* Set the CSS display size explicitly on both axes */
     canvas.style.width  = `${cssW}px`;
     canvas.style.height = `${cssH}px`;
 

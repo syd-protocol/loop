@@ -92,6 +92,13 @@ const World = (() => {
                     continue;
                 }
 
+                /* Fill solid background first so transparent PNG areas
+                   show a neutral floor colour rather than canvas background */
+                bCtx.fillStyle = (SOLID_TILES.has(tileName) || SOLID_TILES.has(letter))
+                    ? '#1a1f2e'   // dark for walls/furniture
+                    : '#2a2318';  // warm dark for floor
+                bCtx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
+
                 bCtx.drawImage(
                     tilesetImg,
                     tileCoords.x, tileCoords.y, tw, th,      // source

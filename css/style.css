@@ -62,12 +62,19 @@ html, body {
     left: 50%;
     transform: translate(-50%, -50%);
 
-    /* Scaled via JS to fill viewport — see main.js resizeCanvas() */
+    /* Scaled via JS — override any browser-injected aspect-ratio behaviour */
     image-rendering: pixelated;
     image-rendering: crisp-edges; /* Firefox */
+    image-rendering: -moz-crisp-edges;
 
     display: block;
     background: var(--deep-navy);
+
+    /* Prevent browser from applying intrinsic aspect-ratio constraints */
+    max-width: none;
+    max-height: none;
+    /* Explicit aspect ratio so CSS doesn't fight JS-set dimensions */
+    aspect-ratio: 320 / 180;
 }
 
 /* ── UI OVERLAY ───────────────────────────────────────────────────── */
