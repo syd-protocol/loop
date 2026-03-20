@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>/loop — Sprite Map Viewer</title>
+    <style>
+        :root {
+            --system-black: #0A0B10;
+            --deep-navy: #0D1B2A;
+            --loop-cyan: #00F2FF;
+            --gold: #F4C430;
+            --grey: #4A4D5E;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--system-black);
+            color: var(--loop-cyan);
+            font-family: 'Courier New', monospace;
+            padding: 24px;
+        }
+
+        h1 {
+            font-size: 14px;
+            letter-spacing: 3px;
+            color: var(--loop-cyan);
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 10px;
+            color: var(--grey);
+            letter-spacing: 2px;
+            margin-bottom: 32px;
+        }
+
+        .sprite-section {
+            margin-bottom: 40px;
+            border: 1px solid var(--grey);
+            padding: 16px;
+        }
+
+        .sprite-section h2 {
+            font-size: 11px;
+            letter-spacing: 2px;
+            color: var(--gold);
+            margin-bottom: 4px;
+        }
+
+        .sprite-section .src {
+            font-size: 9px;
+            color: var(--grey);
+            margin-bottom: 4px;
+        }
+
+        .sprite-section .layout-tag {
+            font-size: 9px;
+            color: var(--loop-cyan);
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+
+        .frames-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .frame-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .frame-label {
+            font-size: 8px;
+            letter-spacing: 1px;
+            color: var(--grey);
+            text-align: center;
+            white-space: pre-line;
+        }
+
+        canvas {
+            border: 1px solid var(--grey);
+            background: transparent;
+            image-rendering: pixelated;
+        }
+
+        .error {
+            color: #E63B2E;
+            font-size: 10px;
+            letter-spacing: 1px;
+        }
+
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--deep-navy);
+            border-top: 1px solid var(--grey);
+            padding: 8px 24px;
+            font-size: 9px;
+            letter-spacing: 1px;
+            color: var(--grey);
+        }
+
+        .loading {
+            color: var(--loop-cyan);
+            font-size: 10px;
+            letter-spacing: 2px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>[ /loop — SPRITE MAP VIEWER ]</h1>
+    <p class="subtitle">READS data/sprite-map.json — RENDERS EACH FRAME AT 2× SCALE FOR INSPECTION</p>
+
+    <div id="output">
+        <p class="loading">LOADING SPRITE MAP...</p>
+    </div>
+
+    <div class="status-bar" id="status">AWAITING DATA</div>
+
+    <script>
+        const DISPLAY_SCALE = 2;
+
+        async function loadSpriteMap() {
+            const output = document.getElementById('output');
+            const status = document.getElementById('status');
+
+            let spriteMap;
+            try {
+                const res = await fetch('data/sprite-map.json');
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                spriteMap = await res.json();
+            } catch (err) {
+                output.innerHTML = `<p class="error">[ ERROR ] Cannot load data/sprite-map.json — ${err.message}<br>Make sure you are running via Live Server, not file:///</p>`;
+                return;
+            }
+
+            output.innerHTML = '';
+            let totalFrames = 0;
+            let totalErrors = 0;
+
+            for (const [key, def] of Object.entries(spriteMap)) {
+                const section = document.createElement('div');
+                section.className = 'sprite-section';
+
+                const heading = document.createElement('h2');
+                heading.textContent = key.toUpperCase();
+                section.appendChild(heading);
+
+                const srcLine = document.createElement('p');
+                srcLine.className = 'src';
+                srcLine.textContent = def.src;
+                section.appendChild(srcLine);
+
+                const layoutTag = document.createElement('p');
+                layoutTag.className = 'layout-tag';
+                layoutTag.textContent = `layout: ${def.layout || 'default'}`;
+                section.appendChild(layoutTag);
+
+                const grid = document.createElement('div');
+                grid.className = 'frames-grid';
+
+                const img = new Image();
+                img.src = def.src;
+
+                await new Promise(resolve => {
+                    img.onload = resolve;
+                    img.onerror = () => {
+                        const err = document.createElement('p');
+                        err.className = 'error';
+                        err.textContent = `[ MISSING ] ${def.src} — file not found`;
+                        section.appendChild(err);
+                        totalErrors++;
+                        resolve();
+                    };
+                });
+
+                if (!img.complete || img.naturalWidth === 0) {
+                    output.appendChild(section);
+                    continue;
+                }
+
+                if (def.animations) {
+                    renderAnimations(img, def, grid);
+                } else if (def.tiles) {
+                    renderTiles(img, def, grid);
+                } else if (def.frames) {
+                    renderFrames(img, def, grid);
+                }
+
+                totalFrames += grid.children.length;
+                section.appendChild(grid);
+                output.appendChild(section);
+            }
+
+            status.textContent = `[ COMPLETE ] ${Object.keys(spriteMap).length} SPRITES — ${totalFrames} FRAMES RENDERED — ${totalErrors} ERRORS`;
+            status.style.color = totalErrors > 0 ? '#E63B2E' : '#00A878';
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // getSrcCoords: single source of truth for all layout types.
+        //
+        // "default" (no layout field)
+        //   Directions run top-to-bottom (y = row * fh).
+        //   Animation frames run left-to-right (x = frameIndex * fw).
+        //   Formula: sx = frameIndex * fw,  sy = row * fh
+        //   Example: player
+        //
+        // "vertical"
+        //   Directions run top-to-bottom, one frame per direction (full width).
+        //   Formula: sx = 0,  sy = row * fh
+        //   Example: npc-antagonist
+        //
+        // "horizontal"
+        //   Directions run left-to-right, one frame per direction (full height).
+        //   Formula: sx = row * fw,  sy = 0
+        //   Example: npc-friendly
+        //
+        // "grid"
+        //   Directions run left-to-right (columns).
+        //   Animation frames run top-to-bottom (rows).
+        //   Formula: sx = row * fw,  sy = frameIndex * fh
+        //   Example: operative-anchor, operative-drifter
+        //
+        // "strip"
+        //   All frames in a single horizontal line.
+        //   Grouped as: [dir0_f0, dir0_f1, dir1_f0, dir1_f1, ...]
+        //   Formula: sx = (row * framesPerDirection + frameIndex) * fw,  sy = 0
+        //   Example: operative-distractor
+        // ─────────────────────────────────────────────────────────────────────
+        function getSrcCoords(layout, row, frameIndex, framesPerDirection, fw, fh) {
+            switch (layout) {
+                case 'vertical':
+                    return { sx: 0, sy: row * fh };
+                case 'horizontal':
+                    return { sx: row * fw, sy: 0 };
+                case 'grid':
+                    return { sx: row * fw, sy: frameIndex * fh };
+                case 'strip':
+                    return { sx: (row * framesPerDirection + frameIndex) * fw, sy: 0 };
+                default:
+                    // Directions on y, frames on x — standard RPG sprite sheet
+                    return { sx: frameIndex * fw, sy: row * fh };
+            }
+        }
+
+        function renderAnimations(img, def, grid) {
+            const fw = def.frameWidth;
+            const fh = def.frameHeight;
+
+            if (!fw || !fh) {
+                const warn = document.createElement('p');
+                warn.className = 'error';
+                warn.textContent = '[ PENDING ] frameWidth or frameHeight is 0';
+                grid.appendChild(warn);
+                return;
+            }
+
+            const layout = def.layout || null;
+
+            // Cap rendered size — tall sprites (npc-friendly: 300x896) need reining in
+            const maxDisplay = 200;
+            const scale = Math.min(DISPLAY_SCALE, maxDisplay / Math.max(fw, fh));
+            const dw = Math.round(fw * scale);
+            const dh = Math.round(fh * scale);
+
+            for (const [animName, anim] of Object.entries(def.animations)) {
+                for (let f = 0; f < anim.frames; f++) {
+                    const { sx, sy } = getSrcCoords(layout, anim.row, f, anim.frames, fw, fh);
+
+                    const item = document.createElement('div');
+                    item.className = 'frame-item';
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = dw;
+                    canvas.height = dh;
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = false;
+                    ctx.drawImage(img, sx, sy, fw, fh, 0, 0, dw, dh);
+
+                    const label = document.createElement('p');
+                    label.className = 'frame-label';
+                    label.textContent = `${animName} f${f}\n(${sx},${sy})`;
+
+                    item.appendChild(canvas);
+                    item.appendChild(label);
+                    grid.appendChild(item);
+                }
+            }
+        }
+
+        function renderTiles(img, def, grid) {
+            const tw = def.tileWidth;
+            const th = def.tileHeight;
+
+            if (!tw || !th) {
+                const warn = document.createElement('p');
+                warn.className = 'error';
+                warn.textContent = '[ PENDING ] tileWidth or tileHeight is 0';
+                grid.appendChild(warn);
+                return;
+            }
+
+            const maxDisplay = 160;
+            const scale = Math.min(DISPLAY_SCALE, maxDisplay / Math.max(tw, th));
+            const dw = Math.round(tw * scale);
+            const dh = Math.round(th * scale);
+
+            for (const [tileName, coords] of Object.entries(def.tiles)) {
+                const item = document.createElement('div');
+                item.className = 'frame-item';
+
+                const canvas = document.createElement('canvas');
+                canvas.width = dw;
+                canvas.height = dh;
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(img, coords.x, coords.y, tw, th, 0, 0, dw, dh);
+
+                const label = document.createElement('p');
+                label.className = 'frame-label';
+                label.textContent = `${tileName}\n(${coords.x},${coords.y})`;
+
+                item.appendChild(canvas);
+                item.appendChild(label);
+                grid.appendChild(item);
+            }
+        }
+
+        function renderFrames(img, def, grid) {
+            const fw = def.frameWidth;
+            const fh = def.frameHeight;
+
+            if (!fw || !fh) {
+                const warn = document.createElement('p');
+                warn.className = 'error';
+                warn.textContent = '[ PENDING ] frameWidth or frameHeight is 0';
+                grid.appendChild(warn);
+                return;
+            }
+
+            const maxDisplay = 128;
+            const scale = Math.min(DISPLAY_SCALE, maxDisplay / Math.max(fw, fh));
+            const dw = Math.round(fw * scale);
+            const dh = Math.round(fh * scale);
+
+            for (const [frameName, coords] of Object.entries(def.frames)) {
+                const item = document.createElement('div');
+                item.className = 'frame-item';
+
+                const canvas = document.createElement('canvas');
+                canvas.width = dw;
+                canvas.height = dh;
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(img, coords.x, coords.y, fw, fh, 0, 0, dw, dh);
+
+                const label = document.createElement('p');
+                label.className = 'frame-label';
+                label.textContent = `${frameName}\n(${coords.x},${coords.y})`;
+
+                item.appendChild(canvas);
+                item.appendChild(label);
+                grid.appendChild(item);
+            }
+        }
+
+        loadSpriteMap();
+    </script>
+
+</body>
+</html>

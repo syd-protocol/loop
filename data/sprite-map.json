@@ -1,0 +1,314 @@
+{
+    "player": {
+        "src": "assets/sprites/player.png",
+        "frameWidth": 176,
+        "frameHeight": 192,
+        "note": "8-frame walk cycle per direction. Cols 0-1 and 6-7 are neutral poses; cols 2-3 are right-step; cols 4-5 are left-step. Schema updated to frames=8, fps=8. idle-down uses col 0 (neutral pose). Layout is default (frames advance x, directions advance y).",
+        "animations": {
+            "walk-down": {
+                "row": 0,
+                "frames": 8,
+                "fps": 8
+            },
+            "walk-up": {
+                "row": 1,
+                "frames": 8,
+                "fps": 8
+            },
+            "walk-left": {
+                "row": 2,
+                "frames": 8,
+                "fps": 8
+            },
+            "walk-right": {
+                "row": 3,
+                "frames": 8,
+                "fps": 8
+            },
+            "idle-down": {
+                "row": 0,
+                "frames": 1,
+                "fps": 1
+            }
+        }
+    },
+    "npc-friendly": {
+        "src": "assets/sprites/npc-friendly.png",
+        "layout": "horizontal",
+        "frameWidth": 300,
+        "frameHeight": 896,
+        "animations": {
+            "idle-down": {
+                "row": 0,
+                "frames": 1,
+                "fps": 1
+            },
+            "idle-up": {
+                "row": 1,
+                "frames": 1,
+                "fps": 1
+            },
+            "idle-left": {
+                "row": 2,
+                "frames": 1,
+                "fps": 1
+            },
+            "idle-right": {
+                "row": 3,
+                "frames": 1,
+                "fps": 1
+            }
+        }
+    },
+    "npc-antagonist": {
+        "src": "assets/sprites/npc-antagonist.png",
+        "layout": "vertical",
+        "frameWidth": 592,
+        "frameHeight": 448,
+        "animations": {
+            "idle-down": {
+                "row": 0,
+                "frames": 1,
+                "fps": 1
+            },
+            "idle-up": {
+                "row": 1,
+                "frames": 1,
+                "fps": 1
+            },
+            "idle-left": {
+                "row": 2,
+                "frames": 1,
+                "fps": 1
+            },
+            "idle-right": {
+                "row": 3,
+                "frames": 1,
+                "fps": 1
+            }
+        }
+    },
+    "operative-drifter": {
+        "src": "assets/sprites/operative-drifter.png",
+        "layout": "grid",
+        "frameWidth": 300,
+        "frameHeight": 448,
+        "note": "Regenerated clean sheet. 4x2 grid, 4 directions (cols) x 2 idle frames (rows). No reference material.",
+        "animations": {
+            "idle-down": {
+                "row": 0,
+                "frames": 2,
+                "fps": 2
+            },
+            "idle-up": {
+                "row": 1,
+                "frames": 2,
+                "fps": 2
+            },
+            "idle-left": {
+                "row": 2,
+                "frames": 2,
+                "fps": 2
+            },
+            "idle-right": {
+                "row": 3,
+                "frames": 2,
+                "fps": 2
+            }
+        }
+    },
+    "operative-distractor": {
+        "src": "assets/sprites/operative-distractor.png",
+        "layout": "strip",
+        "frameWidth": 212,
+        "frameHeight": 312,
+        "animations": {
+            "idle-down": {
+                "row": 0,
+                "frames": 2,
+                "fps": 2
+            },
+            "idle-up": {
+                "row": 1,
+                "frames": 2,
+                "fps": 2
+            },
+            "idle-left": {
+                "row": 2,
+                "frames": 2,
+                "fps": 2
+            },
+            "idle-right": {
+                "row": 3,
+                "frames": 2,
+                "fps": 2
+            }
+        }
+    },
+    "operative-anchor": {
+        "src": "assets/sprites/operative-anchor.png",
+        "layout": "grid",
+        "frameWidth": 352,
+        "frameHeight": 384,
+        "animations": {
+            "idle-down": {
+                "row": 0,
+                "frames": 2,
+                "fps": 2
+            },
+            "idle-up": {
+                "row": 1,
+                "frames": 2,
+                "fps": 2
+            },
+            "idle-left": {
+                "row": 2,
+                "frames": 2,
+                "fps": 2
+            },
+            "idle-right": {
+                "row": 3,
+                "frames": 2,
+                "fps": 2
+            }
+        }
+    },
+    "tileset-interior": {
+        "src": "assets/sprites/tileset-interior.png",
+        "tileWidth": 352,
+        "tileHeight": 384,
+        "note": "Cell(0,2) at x=704,y=0 is an unmapped diagonal room corner tile \u2014 available as 'corner' if needed.",
+        "tiles": {
+            "floor": {
+                "x": 0,
+                "y": 0
+            },
+            "wall": {
+                "x": 352,
+                "y": 0
+            },
+            "desk": {
+                "x": 1056,
+                "y": 0
+            },
+            "bed": {
+                "x": 0,
+                "y": 384
+            },
+            "bookshelf": {
+                "x": 352,
+                "y": 384
+            },
+            "door": {
+                "x": 704,
+                "y": 384
+            },
+            "window": {
+                "x": 1056,
+                "y": 384
+            }
+        }
+    },
+    "tileset-exterior": {
+        "src": "assets/sprites/tileset-exterior.png",
+        "tileWidth": 352,
+        "tileHeight": 384,
+        "note": "Cell(1,1) at x=352,y=384 is an unmapped composite tile (path + lamp post base) \u2014 available as 'path-lamp' if needed.",
+        "tiles": {
+            "ground": {
+                "x": 0,
+                "y": 0
+            },
+            "path": {
+                "x": 352,
+                "y": 0
+            },
+            "wall": {
+                "x": 704,
+                "y": 0
+            },
+            "window": {
+                "x": 1056,
+                "y": 0
+            },
+            "stall": {
+                "x": 0,
+                "y": 384
+            },
+            "lamp": {
+                "x": 704,
+                "y": 384
+            },
+            "plant": {
+                "x": 1056,
+                "y": 384
+            }
+        }
+    },
+    "items": {
+        "src": "assets/sprites/items.png",
+        "frameWidth": 281,
+        "frameHeight": 768,
+        "frames": {
+            "scroll": {
+                "x": 0,
+                "y": 0
+            },
+            "coin": {
+                "x": 281,
+                "y": 0
+            },
+            "potion": {
+                "x": 562,
+                "y": 0
+            },
+            "laptop": {
+                "x": 843,
+                "y": 0
+            },
+            "envelope": {
+                "x": 1124,
+                "y": 0
+            }
+        }
+    },
+    "icons-ui": {
+        "src": "assets/icons/icons-ui.png",
+        "frameWidth": 352,
+        "frameHeight": 384,
+        "frames": {
+            "intelligence": {
+                "x": 0,
+                "y": 0
+            },
+            "strength": {
+                "x": 352,
+                "y": 0
+            },
+            "charisma": {
+                "x": 704,
+                "y": 0
+            },
+            "dexterity": {
+                "x": 1056,
+                "y": 0
+            },
+            "luck": {
+                "x": 0,
+                "y": 384
+            },
+            "architect": {
+                "x": 352,
+                "y": 384
+            },
+            "warlord": {
+                "x": 704,
+                "y": 384
+            },
+            "herald": {
+                "x": 1056,
+                "y": 384
+            }
+        }
+    }
+}

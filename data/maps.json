@@ -1,0 +1,113 @@
+{
+    "home-flat": {
+        "id": "home-flat",
+        "name": "Home Flat",
+        "tileset": "tileset-interior",
+        "tileSize": 16,
+        "cols": 20,
+        "rows": 15,
+        "playerSpawn": {
+            "col": 3,
+            "row": 7
+        },
+        "transitions": [
+            {
+                "col": 10,
+                "row": 14,
+                "toMap": "neighbourhood",
+                "toSpawn": {
+                    "col": 10,
+                    "row": 1
+                },
+                "label": "Front Door"
+            }
+        ],
+        "npcs": [],
+        "operatives": [],
+        "tiles": [
+            "w w w w w w w w w w w w w w w w w w w w",
+            "w f f f f f f f f f f f f f f f f f f w",
+            "w f f f f f f f f f f f f f f f f f f w",
+            "w f f D f f f f f f f f f f f B B f f w",
+            "w f f D f f f f f f f f f f f B B f f w",
+            "w f f f f f f f f f f f f f f f f f f w",
+            "w f f f f f f f f f f f f f f f f f f w",
+            "w f f f f f f f f f f f f f f f f f f w",
+            "w f f f f f f f f f f f f f f f W f f w",
+            "w f f f f f f f f f f f f f f f W f f w",
+            "w w f f f f f f f f f f f f f w w w w w",
+            "w w f f f f f f f f f f f f f w w w w w",
+            "w w f f f f f f f f f f f f f w w w w w",
+            "w w f f f f f f f f f f f f f w w w w w",
+            "w w w w w w w w w w d w w w w w w w w w"
+        ],
+        "tileKey": {
+            "f": "floor",
+            "w": "wall",
+            "d": "door",
+            "W": "window",
+            "D": "desk",
+            "B": "bed",
+            "K": "bookshelf"
+        }
+    },
+    "neighbourhood": {
+        "id": "neighbourhood",
+        "name": "The Neighbourhood",
+        "tileset": "tileset-exterior",
+        "tileSize": 16,
+        "cols": 30,
+        "rows": 20,
+        "playerSpawn": {
+            "col": 10,
+            "row": 2
+        },
+        "transitions": [
+            {
+                "col": 10,
+                "row": 1,
+                "toMap": "home-flat",
+                "toSpawn": {
+                    "col": 10,
+                    "row": 13
+                },
+                "label": "Home"
+            }
+        ],
+        "npcs": [],
+        "operatives": [],
+        "tiles": [
+            "W W W W W W W W W W W W W W W W W W W W W W W W W W W W W W",
+            "W g g g g g g g g g d g g g g g g g g g g g g g g g g g g W",
+            "W g g g g g g g g g g g g g g g g g g g g g g g g g g g g W",
+            "W g p p p p p p p p p p p p p p p p p p p p p p p p p g g W",
+            "W g p g g g g g g g g g g g g g g g g g g g g g g p g g g W",
+            "W g p g g g g g g g g g g g g g g g g g g g g g g p g g g W",
+            "W g p g g g g g g g g g g g g g g g g g g g g g g p g g g W",
+            "W g p p p p p p p p p p p p p p p p p p p p p p p p g g g W",
+            "W g g g g g g g g g g g g g g g g g g g g g g g g g g g g W",
+            "W g g g g g g g l g g g g g g g g g g g l g g g g g g g g W",
+            "W g g g g g g g g g g g g g g g g g g g g g g g g g g g g W",
+            "W g g g S g g g g g g g g g g g g g g g g g g g g g g g g W",
+            "W g g g g g g g g g g g g g g g g g g g g g g g g g g g g W",
+            "W g g g g g g g g g g g g g g g g g g g g g g g g g g g g W",
+            "W W g g g g W g g g g W g g g g W g g g g W g g g g W g g W",
+            "W W g g g g W g g g g W g g g g W g g g g W g g g g W g g W",
+            "W g g g g g g g g g g g g g g g g g g g g g g g g g g g g W",
+            "W g g g g g g g g g g g g g g g g g g g g g g g g g g g g W",
+            "W g g g g g g g g g g g g g g g g g g g g g g g g g g g g W",
+            "W W W W W W W W W W W W W W W W W W W W W W W W W W W W W W"
+        ],
+        "tileKey": {
+            "g": "ground",
+            "p": "path",
+            "W": "wall",
+            "w": "window",
+            "s": "stall",
+            "S": "stall",
+            "l": "lamp",
+            "n": "plant",
+            "d": "door"
+        }
+    }
+}

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#0A0B10" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>/loop</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+    <!-- ── GAME CANVAS ─────────────────────────────────────────────── -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- ── DOM OVERLAY ────────────────────────────────────────────── -->
+    <!-- All UI panels sit here, on top of the canvas -->
+    <div id="ui-overlay">
+
+        <!-- System Window button (top-right) -->
+        <button id="btn-system" aria-label="Open System Window">
+            <span class="btn-icon">⊞</span>
+        </button>
+
+        <!-- System Window panel (hidden by default) -->
+        <div id="system-window" class="panel" hidden>
+            <div class="panel-header">
+                <span class="panel-title">[ SYSTEM WINDOW ]</span>
+                <button id="btn-system-close" aria-label="Close">✕</button>
+            </div>
+            <div class="panel-body" id="system-window-body">
+                <!-- Populated by system-window.js -->
+                <p class="syd-line">[ INITIALISING ]</p>
+            </div>
+        </div>
+
+        <!-- Dialogue box (bottom, hidden by default) -->
+        <div id="dialogue-box" class="panel" hidden>
+            <div class="panel-header">
+                <span id="dialogue-speaker" class="panel-title"></span>
+            </div>
+            <div class="panel-body">
+                <p id="dialogue-text"></p>
+                <button id="dialogue-advance" aria-label="Continue">▶</button>
+            </div>
+        </div>
+
+        <!-- Notification toast (top-centre, hidden by default) -->
+        <div id="notification" hidden>
+            <span id="notification-text"></span>
+        </div>
+
+        <!-- Dev overlay — remove before ship -->
+        <div id="dev-overlay">
+            <span id="dev-fps">--fps</span>
+            <span id="dev-tile">--,--</span>
+        </div>
+
+    </div>
+
+    <!-- ── SCRIPTS ─────────────────────────────────────────────────── -->
+    <!-- Load order matters — main.js must come last -->
+    <script src="js/world.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/npc.js"></script>
+    <script src="js/stats.js"></script>
+    <script src="js/system-window.js"></script>
+    <script src="js/save.js"></script>
+    <script src="js/main.js"></script>
+
+</body>
+</html>
