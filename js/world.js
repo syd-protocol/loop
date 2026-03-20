@@ -68,28 +68,25 @@ const World = (() => {
        composited on top at reduced opacity for texture detail.
     */
     const TILE_COLOURS = {
-        // Interior — warm, lived-in amber tones
-        // Base fills show through the PNG at high alpha to give each tile
-        // warmth and identity. PNG is drawn at 0.85 alpha so the artwork
-        // reads clearly while the base tint keeps the palette cohesive.
-        'floor':      '#c8a870',   // warm honey-wood — the main living surface
-        'wall':       '#8a9bb0',   // soft blue-grey stone — readable, not harsh
-        'desk':       '#5a8ab0',   // cool blue — cyan monitor screen presence
-        'bed':        '#6a7a9a',   // muted blue-grey — restful, soft
-        'bookshelf':  '#6a8a5a',   // warm green — full shelves, organic feel
-        'door':       '#c8a050',   // warm gold — exits read as inviting, not alarming
-        'window':     '#a0d4e8',   // soft sky blue — daylight through glass
-        // Exterior — bright, peaceful daytime neighbourhood
-        // Think Zelda: Link's Awakening or A Link to the Past — vivid grass,
-        // warm stone paths, sunlit details. Cheerful and welcoming.
-        'ground':     '#7ec850',   // bright daylight grass green
-        'path':       '#d4b882',   // warm sandy stone path
-        'wall':       '#9aacbe',   // light stone building wall
-        'stall':      '#e8c030',   // warm sunlit yellow — market stall awning
-        'lamp':       '#d4c070',   // warm brass lamp post
-        'plant':      '#3aaa30',   // vivid green bush/plant
+        // Interior — warm, lived-in amber tones.
+        // At tileSize=32 the PNG artwork reads clearly, so base colours
+        // are softer tints that complement the artwork rather than compete.
+        'floor':      '#c8a464',   // warm honey wood
+        'wall':       '#7a8fa8',   // soft blue-grey stone
+        'desk':       '#4a7aaa',   // cool blue — monitor screen presence
+        'bed':        '#5a6a8a',   // muted blue-grey — restful
+        'bookshelf':  '#5a7a4a',   // warm green — full shelves
+        'door':       '#c89040',   // warm gold — exits feel inviting
+        'window':     '#90c8e0',   // soft sky — daylight through glass
+        // Exterior — bright, peaceful daytime.
+        // Zelda-inspired: vivid grass, warm stone paths, sunlit details.
+        'ground':     '#68c040',   // bright daylight grass
+        'path':       '#c8a864',   // warm sandy stone path
+        'stall':      '#e0b820',   // sunlit yellow awning
+        'lamp':       '#c8b050',   // warm brass lamp post
+        'plant':      '#30a020',   // vivid green bush
         // Fallback
-        'default':    '#8aaa70',
+        'default':    '#80a860',
     };
 
     function _tileColour(tileName) {
@@ -146,22 +143,28 @@ const World = (() => {
                 bCtx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
 
                 /* Composite PNG texture at reduced alpha for detail overlay */
-                bCtx.globalAlpha = 0.85;
+                bCtx.globalAlpha = 0.9;
+                /* Inset 8px from each edge of the source tile to crop out
+                   the cell border/outline that the tileset PNG includes.
+                   Without this inset, those border lines scale down and
+                   render as a visible grid pattern across the whole map. */
+                const BORDER = 8;
                 bCtx.drawImage(
                     tilesetImg,
-                    tileCoords.x, tileCoords.y, tw, th,
+                    tileCoords.x + BORDER, tileCoords.y + BORDER,
+                    tw - BORDER * 2, th - BORDER * 2,
                     c * tileSize, r * tileSize, tileSize, tileSize
                 );
                 bCtx.globalAlpha = 1.0;
 
-                /* Door marker — warm gold highlight so exits read as inviting */
+                /* Door marker — warm gold highlight so exits feel inviting */
                 if (tileName === 'door') {
-                    bCtx.fillStyle = 'rgba(220, 170, 40, 0.55)';
+                    bCtx.fillStyle = 'rgba(220, 170, 40, 0.5)';
                     bCtx.fillRect(
-                        c * tileSize + 3, r * tileSize,
-                        tileSize - 6, tileSize - 2
+                        c * tileSize + 4, r * tileSize,
+                        tileSize - 8, tileSize - 2
                     );
-                    bCtx.fillStyle = 'rgba(255, 210, 80, 0.2)';
+                    bCtx.fillStyle = 'rgba(255, 210, 80, 0.15)';
                     bCtx.fillRect(
                         c * tileSize, r * tileSize,
                         tileSize, tileSize

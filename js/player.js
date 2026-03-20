@@ -24,11 +24,11 @@ const Player = (() => {
        8 frames per direction — full smooth walk cycle
        Row 0: walk-down (front)  Row 1: walk-up (back)
        Row 2: walk-left          Row 3: walk-right
-       Rendered at 16×16px in the world (one tile)
+       Rendered at 32×32px in the world (one tile, matches tileSize)
     */
     const SPRITE_KEY  = 'player';
-    const RENDER_W    = 16;
-    const RENDER_H    = 16;
+    const RENDER_W    = 32;   // matches tileSize — player occupies one full tile
+    const RENDER_H    = 32;   // matches tileSize — player occupies one full tile
     const WALK_FRAMES = 8;
     const WALK_FPS    = 8;
     const WALK_MS     = 1000 / WALK_FPS;   // ms per animation frame

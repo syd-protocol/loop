@@ -3,7 +3,7 @@
         "id": "home-flat",
         "name": "Home Flat",
         "tileset": "tileset-interior",
-        "tileSize": 24,
+        "tileSize": 32,
         "cols": 40,
         "rows": 80,
         "playerSpawn": {
@@ -128,7 +128,7 @@
         "id": "neighbourhood",
         "name": "The Neighbourhood",
         "tileset": "tileset-exterior",
-        "tileSize": 24,
+        "tileSize": 32,
         "cols": 60,
         "rows": 50,
         "playerSpawn": {

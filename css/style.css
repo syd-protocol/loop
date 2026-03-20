@@ -82,7 +82,7 @@ body {
     image-rendering: -moz-crisp-edges;
 
     display: block;
-    background: #5a9040;   /* warm exterior green — matches ground tile base */
+    background: #68c040;   /* warm grass — matches world exterior */
 }
 
 /* ── UI OVERLAY ───────────────────────────────────────────────────── */
