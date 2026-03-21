@@ -239,84 +239,93 @@ const SystemWindow = (() => {
         `);
     }
 
-    /* ── Directives section ─────────────────────────────────────── */
+    /* ── Directives — tabbed view ──────────────────────────────── */
+    /*
+       SYD is efficient. Four stat tabs (INT/STR/CHA/DEX) with X/3 badge.
+       Tap a tab to see only those 3 directives. No dumped list.
+    */
+    let _activeTab = 'intelligence';
+
+    const _STAT_META = {
+        intelligence: { label: 'INT', colour: 'var(--intelligence)' },
+        strength:     { label: 'STR', colour: 'var(--strength)'     },
+        charisma:     { label: 'CHA', colour: 'var(--charisma)'     },
+        dexterity:    { label: 'DEX', colour: 'var(--dexterity)'    },
+    };
+    const _STAT_ORDER = ['intelligence','strength','charisma','dexterity'];
+
     function _directivesHTML() {
         if (typeof Quests === 'undefined' || !Quests.isReady()) {
-            return _card(`<p class="syd-line dim">[ DIRECTIVES LOADING ]</p>`);
+            return _card('<p class="syd-line dim">[ DIRECTIVES LOADING ]</p>');
         }
 
-        const active    = Quests.getActive();
-        const done      = Quests.getCompletedCount();
-        const total     = Quests.getTotalCount();
-        const dayCount  = Quests.getDayCount();
+        const active   = Quests.getActive();
+        const done     = Quests.getCompletedCount();
+        const total    = Quests.getTotalCount();
+        const dayCount = Quests.getDayCount();
+        const pct      = total > 0 ? Math.round((done / total) * 100) : 0;
 
         /* Group by stat */
-        const STAT_LABELS = {
-            intelligence: 'INT', strength: 'STR',
-            charisma: 'CHA',     dexterity: 'DEX'
-        };
-        const STAT_ORDER = ['intelligence', 'strength', 'charisma', 'dexterity'];
-
         const groups = {};
-        for (const entry of active) {
-            const s = entry.quest.stat;
-            if (!groups[s]) groups[s] = [];
-            groups[s].push(entry);
+        for (const e of active) {
+            if (!groups[e.quest.stat]) groups[e.quest.stat] = [];
+            groups[e.quest.stat].push(e);
         }
 
-        const progressPct = total > 0 ? Math.round((done / total) * 100) : 0;
-
-        let html = `
-            <div class="sw-dir-header">
-                <span class="sw-section-title" id="sw-dir-title"></span>
-                <span class="sw-dir-count">${done}/${total}</span>
-            </div>
-            <div class="sw-bar-track sw-dir-progress">
-                <div class="sw-bar-fill dexterity" data-pct="${progressPct}"
-                     style="width:0%"><div class="sw-shimmer"></div></div>
-            </div>
-            <div class="sw-dir-day">DAY ${dayCount}</div>`;
-
-        for (const stat of STAT_ORDER) {
+        /* Tabs */
+        let tabs = '';
+        for (const stat of _STAT_ORDER) {
+            const meta    = _STAT_META[stat];
             const entries = groups[stat] || [];
-            if (!entries.length) continue;
+            const statDone = entries.filter(e => e.completed).length;
+            const isActive = stat === _activeTab;
+            const allDone  = statDone === entries.length && entries.length > 0;
+            tabs += `<button class="sw-dir-tab${isActive ? ' active' : ''}${allDone ? ' all-done' : ''}"
+                        data-tab="${stat}"
+                        ${isActive ? `style="--tab-colour:${meta.colour}"` : ''}>
+                    ${meta.label}<span class="sw-dir-badge${allDone ? ' badge-done' : ''}">${statDone}/${entries.length}</span>
+                </button>`;
+        }
 
-            html += `<div class="sw-dir-group">
-                <span class="sw-dir-stat-label">${STAT_LABELS[stat]}</span>`;
-
-            for (const entry of entries) {
-                const q    = entry.quest;
-                const done = entry.completed;
-                html += `
-                <div class="sw-dir-card${done ? ' sw-dir-done' : ''}"
-                     data-quest-id="${q.id}"
-                     ${done ? '' : 'role="button" tabindex="0"'}>
+        /* Cards for active tab */
+        const tabEntries = groups[_activeTab] || [];
+        let cards = '';
+        for (const entry of tabEntries) {
+            const q      = entry.quest;
+            const isDone = entry.completed;
+            cards += `<div class="sw-dir-card${isDone ? ' sw-dir-done' : ''}">
                     <div class="sw-dir-card-top">
                         <span class="sw-dir-title">${q.title}</span>
-                        ${done
-                            ? `<span class="sw-dir-reward">+${q.statDelta} ${STAT_LABELS[q.stat]}</span>`
+                        ${isDone
+                            ? `<span class="sw-dir-reward">+${q.statDelta} ${_STAT_META[q.stat].label} ✓</span>`
                             : `<span class="sw-dir-tier">T${q.tier}</span>`}
                     </div>
-                    <p class="sw-dir-desc">${q.desc.substring(0, 90)}${q.desc.length > 90 ? '…' : ''}</p>
-                    ${!done ? `<button class="sw-dir-complete-btn" data-quest-id="${q.id}">COMPLETE ✓</button>` : ''}
+                    <p class="sw-dir-brief">${q.brief}</p>
+                    ${!isDone ? `<button class="sw-dir-complete-btn" data-quest-id="${q.id}">[ COMPLETE ]</button>` : ''}
                 </div>`;
-            }
-
-            html += `</div>`;
         }
 
-        html += `<button class="sw-end-day-btn" id="sw-end-day">[ END DAY ]</button>`;
-
-        return _card(html);
+        return _card(`
+            <div class="sw-dir-header">
+                <span class="sw-section-title" id="sw-dir-title"></span>
+                <span class="sw-dir-meta">DAY ${dayCount} &nbsp;·&nbsp; ${done}/${total}</span>
+            </div>
+            <div class="sw-bar-track sw-dir-progress">
+                <div class="sw-bar-fill intelligence" data-pct="${pct}" style="width:0%">
+                    <div class="sw-shimmer"></div>
+                </div>
+            </div>
+            <div class="sw-dir-tabs">${tabs}</div>
+            <div class="sw-dir-content">${cards}</div>
+        `);
     }
-
     /* ── Footer card ────────────────────────────────────────────── */
     function _footerHTML() {
         return _card(`
             <p class="sw-section-title" id="sw-footer-title"></p>
-            <p class="syd-line dim sw-footer-hint">[ DIRECTIVES ] — COMING SOON</p>
-            <p class="syd-line dim sw-footer-hint">[ SCROLLS ]    — COMING SOON</p>
-            <p class="syd-line dim sw-footer-hint">[ ABILITIES ]  — COMING SOON</p>
+            <p class="syd-line dim sw-footer-hint">[ SCROLLS ]   — COMING SOON</p>
+            <p class="syd-line dim sw-footer-hint">[ ABILITIES ] — COMING SOON</p>
+            <button class="sw-reset-btn" id="sw-reset-btn">[ RESET OPERATIVE ]</button>
         `);
     }
 
@@ -381,32 +390,38 @@ const SystemWindow = (() => {
     function _bindDirectives() {
         if (!_body) return;
 
-        /* Typewrite the directives header */
         const dirTitle = _body.querySelector('#sw-dir-title');
         if (dirTitle) _type(dirTitle, '[ DIRECTIVES ]', 14);
 
+        /* Tab switching */
+        _body.querySelectorAll('.sw-dir-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                _activeTab = btn.dataset.tab;
+                _render();
+            });
+        });
+
         /* Complete buttons */
         _body.querySelectorAll('.sw-dir-complete-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', e => {
                 e.stopPropagation();
-                const id = btn.dataset.questId;
                 if (typeof Quests !== 'undefined') {
-                    Quests.complete(id);
-                    _render();   /* re-render to show updated state */
+                    Quests.complete(btn.dataset.questId);
+                    _render();
                 }
             });
         });
 
-        /* End day button */
-        const endDayBtn = _body.querySelector('#sw-end-day');
-        if (endDayBtn) {
-            endDayBtn.addEventListener('click', () => {
-                if (typeof Quests !== 'undefined') Quests.endDay();
-                _render();
+        /* Reset button */
+        const resetBtn = _body.querySelector('#sw-reset-btn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                if (confirm('Reset all progress? This cannot be undone.')) {
+                    if (typeof Save !== 'undefined') Save.reset();
+                }
             });
         }
     }
-
     /* ── Public API ─────────────────────────────────────────────── */
     function init() {
         _panel = document.getElementById('system-window');

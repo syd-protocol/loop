@@ -108,13 +108,20 @@ function resizeCanvas() {
 }
 
 /* ── ZOOM TOGGLE ────────────────────────────────────────────────── */
+/*
+   Zoom expands the internal viewport (G.viewW/G.viewH) so the camera
+   sees more world. Canvas CSS size never changes — no black borders.
+   1.0 = normal. 0.55 = zoomed out (shows ~1.8× more world).
+*/
 let _zoomTimeout = null;
 
 function setZoom(level) {
     G.zoom = level;
-    G.canvas.style.transform = level === 1.0
-        ? 'translate(-50%, -50%)'
-        : `translate(-50%, -50%) scale(${level})`;
+    /* Reset canvas transform — no CSS scaling ever */
+    G.canvas.style.transform = 'translate(-50%, -50%)';
+    /* Expand internal viewport to show more world */
+    G.viewW = Math.round(CANVAS_W / level);
+    G.viewH = Math.round(G.canvas.height / level);
     const ind = document.getElementById('zoom-indicator');
     if (ind) ind.classList.toggle('visible', level < 1.0);
 }
@@ -126,6 +133,24 @@ function toggleZoom() {
         clearTimeout(_zoomTimeout);
         _zoomTimeout = setTimeout(() => setZoom(1.0), 3000);
     }
+}
+
+/* ── NOTIFICATION TOAST ─────────────────────────────────────────── */
+let _notifTimer = null;
+
+function showNotification(text, duration) {
+    duration = duration || 2500;
+    const el  = document.getElementById('notification');
+    const txt = document.getElementById('notification-text');
+    if (!el || !txt) return;
+    txt.textContent = text;
+    el.hidden = false;
+    el.classList.remove('fading');
+    clearTimeout(_notifTimer);
+    _notifTimer = setTimeout(() => {
+        el.classList.add('fading');
+        setTimeout(() => { el.hidden = true; el.classList.remove('fading'); }, 300);
+    }, duration);
 }
 
 /* ── CAMERA ──────────────────────────────────────────────────────── */
@@ -254,6 +279,9 @@ async function init() {
     initSystemWindowToggle();
 
     try {
+        /* Restore saved state before anything renders */
+        Save.load();
+
         console.log('[init] Loading data...');
         const [spriteMap, mapsData] = await Promise.all([
             loadJSON('data/sprite-map.json'),
@@ -271,6 +299,9 @@ async function init() {
         /* Initialise stat model */
         Stats.init();
 
+        /* Auto-save on any stat change */
+        Stats.onStatChange(() => Save.save());
+
         /* Initialise player sprite and input */
         await Player.init(spriteMap);
 
@@ -287,6 +318,20 @@ async function init() {
         await Quests.init();
         console.log(`[init] Quests ready. ${Quests.getTotalCount()} directives for day 1.`);
 
+        /* Wire notifications for quest events */
+        Quests.onUpdate((event, data) => {
+            if (event === 'complete') {
+                const s = data.quest.stat.slice(0,3).toUpperCase();
+                showNotification(`[ +${data.delta} ${s} ]  ${data.quest.title}`);
+            } else if (event === 'all-complete') {
+                showNotification('[ ALL DIRECTIVES COMPLETE. STREAK MAINTAINED. ]', 3500);
+            } else if (event === 'new-day') {
+                showNotification(`[ DAY ${data.dayCount} — DIRECTIVES REFRESHED ]`, 3000);
+            } else if (event === 'day-missed') {
+                showNotification(`[ ${data.missed} MISSED. HP -${Math.abs(data.hpDelta)}. STREAK BROKEN. ]`, 3500);
+            }
+        });
+
         G.ready    = true;
         G.lastTime = performance.now();
 
@@ -295,6 +340,7 @@ async function init() {
         Boot.play(() => {
             console.log('[Boot] Complete. Game live.');
             /* G.player.name and G.player.class set by boot.js */
+            Save.save();
         });
 
     } catch (err) {

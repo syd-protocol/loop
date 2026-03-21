@@ -1,182 +1,172 @@
 /* ── quests.js ───────────────────────────────────────────────────────
    Step 4. Life Directive system.
 
-   Owns:
-   - Loading quests.json pool on init
-   - Selecting 3 directives per stat per day (12 active total)
-   - Tier selection based on current stat level
-   - Directive completion: applies stat delta × momentum, feeds streak
-   - Day rollover: HP penalty and streak break if directives missed
-   - Notifying listeners on complete / day-end events
-
-   Tier selection thresholds:
-     stat  0-29  → tier 0
-     stat 30-59  → tier 1
-     stat 60-79  → tier 2
-     stat 80-100 → tier 3
-
-   Day system note:
-     Days are currently manual (tap [ END DAY ] in System Window).
-     Step 12 (save.js) will tie this to real-world date via localStorage.
-     The TODO comment below marks where that hook belongs.
+   Day tracking: uses the device's real calendar date via localStorage.
+   On init and on app focus (visibilitychange), the current date is
+   compared to 'loop-last-day'. If a new calendar day has started,
+   endDay() fires automatically. No button needed.
 
    Public API:
-     Quests.init()              — async, loads pool + generates day 1
+     Quests.init()              — async, loads pool + generates today's directives
      Quests.getActive()         — [{quest, completed}, ...]
      Quests.complete(id)        — mark complete, apply rewards
-     Quests.endDay()            — advance day (HP/streak penalty if needed)
      Quests.getCompletedCount() — number done today
      Quests.getTotalCount()     — always 12
      Quests.getDayCount()       — current day number
-     Quests.onUpdate(fn)        — register listener for any state change
+     Quests.isReady()           — true after init
+     Quests.onUpdate(fn)        — register listener (event, data)
 ──────────────────────────────────────────────────────────────────── */
 
 const Quests = (() => {
 
     /* ── Constants ──────────────────────────────────────────────── */
     const DIRECTIVES_PER_STAT = 3;
-    const STATS = ['intelligence', 'strength', 'charisma', 'dexterity'];
-    const HP_MISS_PENALTY = -10;   /* HP lost when day ends with incomplete directives */
+    const STATS      = ['intelligence', 'strength', 'charisma', 'dexterity'];
+    const HP_PENALTY = -10;
+    const DAY_KEY    = 'loop-last-day';
+    const DONE_KEY   = 'loop-done-ids';
+    const DAYNUM_KEY = 'loop-day-count';
 
-    /* Stat value → tier */
-    function _tierForStat(statValue) {
-        if (statValue >= 80) return 3;
-        if (statValue >= 60) return 2;
-        if (statValue >= 30) return 1;
+    /* ── Helpers ────────────────────────────────────────────────── */
+    function _today()    { return new Date().toDateString(); }
+    function _lastDay()  { return localStorage.getItem(DAY_KEY) || ''; }
+    function _saveDay()  { localStorage.setItem(DAY_KEY, _today()); }
+
+    function _tierForStat(v) {
+        if (v >= 80) return 3;
+        if (v >= 60) return 2;
+        if (v >= 30) return 1;
         return 0;
     }
 
     /* ── Private state ──────────────────────────────────────────── */
-    let _pool      = [];       /* all quests from quests.json */
-    let _active    = [];       /* [{quest, completed}, ...] — today's 12 */
-    let _completed = new Set();/* ids completed today */
+    let _pool      = [];
+    let _active    = [];
+    let _completed = new Set();
     let _dayCount  = 1;
     let _listeners = [];
     let _ready     = false;
 
-    /* ── Notify listeners ───────────────────────────────────────── */
+    /* ── Notify ─────────────────────────────────────────────────── */
     function _notify(event, data) {
-        for (const fn of _listeners) {
-            try { fn(event, data); } catch (e) {}
-        }
+        _listeners.forEach(fn => { try { fn(event, data); } catch(e) {} });
     }
 
     /* ── Select 3 directives per stat ──────────────────────────── */
-    /*
-       For each stat, pick the correct tier based on current stat value,
-       then randomly select DIRECTIVES_PER_STAT quests from that pool.
-       Shuffles to avoid always showing the same quests.
-    */
     function _selectDirectives() {
         const active = [];
-
         for (const stat of STATS) {
-            const statValue = Stats.get(stat);
-            const tier      = _tierForStat(statValue);
-
-            /* Get all quests for this stat at this tier */
-            const pool = _pool.filter(q => q.stat === stat && q.tier === tier);
-
-            /* Fallback to tier 0 if somehow empty (shouldn't happen) */
-            const candidates = pool.length > 0
-                ? pool
-                : _pool.filter(q => q.stat === stat && q.tier === 0);
-
-            /* Shuffle and take 3 */
-            const shuffled = [...candidates].sort(() => Math.random() - 0.5);
-            const selected = shuffled.slice(0, DIRECTIVES_PER_STAT);
-
-            for (const quest of selected) {
-                active.push({ quest, completed: false });
-            }
+            const tier       = _tierForStat(Stats.get(stat));
+            let candidates   = _pool.filter(q => q.stat === stat && q.tier === tier);
+            if (!candidates.length)
+                candidates   = _pool.filter(q => q.stat === stat && q.tier === 0);
+            const shuffled   = [...candidates].sort(() => Math.random() - 0.5);
+            shuffled.slice(0, DIRECTIVES_PER_STAT)
+                    .forEach(quest => active.push({ quest, completed: false }));
         }
-
         return active;
     }
 
     /* ── Complete a directive ───────────────────────────────────── */
     function complete(id) {
         if (!_ready) return;
-
         const entry = _active.find(e => e.quest.id === id);
         if (!entry || entry.completed) return;
 
         entry.completed = true;
         _completed.add(id);
 
-        const quest     = entry.quest;
-        const momentum  = Stats.getMomentum();
+        /* Persist completed IDs */
+        localStorage.setItem(DONE_KEY, JSON.stringify([..._completed]));
 
-        /* Apply stat delta scaled by momentum multiplier */
-        const delta = Math.round(quest.statDelta * momentum);
-        Stats.delta(quest.stat, delta);
+        const delta = Math.round(entry.quest.statDelta * Stats.getMomentum());
+        Stats.delta(entry.quest.stat, delta);
+        _notify('complete', { quest: entry.quest, delta });
 
-        /* If all 12 complete — register as a full day streak */
         if (_completed.size === _active.length) {
             Stats.addStreak();
-            console.log(`[Quests] All directives complete. Streak: ${Stats.getStreak()}`);
             _notify('all-complete', { dayCount: _dayCount });
         }
 
-        console.log(`[Quests] Completed: ${quest.title} (+${delta} ${quest.stat})`);
-        _notify('complete', { quest, delta });
-
-        /* Refresh System Window if open */
         if (typeof SystemWindow !== 'undefined') SystemWindow.refresh();
     }
 
-    /* ── End of day ─────────────────────────────────────────────── */
-    /*
-       TODO (Step 12): This should be called automatically when the
-       real-world date changes (detected via localStorage lastActiveDate).
-       For now it's manually triggered via the System Window button.
-    */
+    /* ── End of day (called automatically on date change) ──────── */
     function endDay() {
         if (!_ready) return;
 
-        const totalDone = _completed.size;
-        const total     = _active.length;
-
-        if (totalDone < total) {
-            /* Missed directives — HP penalty and streak break */
-            const missed = total - totalDone;
-            Stats.deltaHP(HP_MISS_PENALTY);
+        const missed = _active.length - _completed.size;
+        if (missed > 0) {
+            Stats.deltaHP(HP_PENALTY);
             Stats.breakStreak();
-            console.log(`[Quests] Day ended. ${missed} missed. HP -${Math.abs(HP_MISS_PENALTY)}.`);
-            _notify('day-missed', { missed, hpDelta: HP_MISS_PENALTY });
+            _notify('day-missed', { missed, hpDelta: HP_PENALTY });
         } else {
             _notify('day-complete', { dayCount: _dayCount });
         }
 
-        /* Advance day */
         _dayCount++;
+        localStorage.setItem(DAYNUM_KEY, _dayCount);
         _completed.clear();
+        localStorage.removeItem(DONE_KEY);
         _active = _selectDirectives();
+        _saveDay();
 
-        console.log(`[Quests] Day ${_dayCount} directives generated.`);
         _notify('new-day', { dayCount: _dayCount });
-
         if (typeof SystemWindow !== 'undefined') SystemWindow.refresh();
+    }
+
+    /* ── Check if a new calendar day has started ────────────────── */
+    function _checkDayRollover() {
+        if (!_ready) return;
+        if (_today() !== _lastDay()) {
+            console.log('[Quests] New day detected — advancing.');
+            endDay();
+        }
     }
 
     /* ── Public API ─────────────────────────────────────────────── */
 
     async function init() {
         try {
-            const res = await fetch('data/quests.json');
+            const res  = await fetch('data/quests.json');
             if (!res.ok) throw new Error(`quests.json: ${res.status}`);
             const data = await res.json();
-            _pool = data.quests;
-            console.log(`[Quests] Pool loaded: ${_pool.length} directives`);
+            _pool      = data.quests;
         } catch (err) {
-            console.error('[Quests] Failed to load pool:', err);
+            console.error('[Quests] Pool load failed:', err);
             _pool = [];
         }
 
-        _active   = _selectDirectives();
-        _dayCount = 1;
-        _ready    = true;
-        console.log(`[Quests] Day 1 directives generated (${_active.length} total)`);
+        /* Restore day count from storage */
+        const saved = parseInt(localStorage.getItem(DAYNUM_KEY), 10);
+        if (!isNaN(saved) && saved > 0) _dayCount = saved;
+
+        /* Restore completed IDs from storage */
+        try {
+            const ids = JSON.parse(localStorage.getItem(DONE_KEY) || '[]');
+            ids.forEach(id => _completed.add(id));
+        } catch(e) {}
+
+        _active  = _selectDirectives();
+        _ready   = true;
+
+        /* Mark already-completed items from storage */
+        _active.forEach(entry => {
+            if (_completed.has(entry.quest.id)) entry.completed = true;
+        });
+
+        /* If this is the very first session, save today's date */
+        if (!_lastDay()) _saveDay();
+
+        /* Check for day rollover (e.g. returning after midnight) */
+        _checkDayRollover();
+
+        /* Listen for tab/app returning to foreground */
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) _checkDayRollover();
+        });
+
+        console.log(`[Quests] Ready. Day ${_dayCount}. ${_active.length} directives.`);
     }
 
     function getActive()         { return [..._active]; }
@@ -184,21 +174,9 @@ const Quests = (() => {
     function getTotalCount()     { return _active.length; }
     function getDayCount()       { return _dayCount; }
     function isReady()           { return _ready; }
+    function onUpdate(fn)        { _listeners.push(fn); }
 
-    function onUpdate(fn) {
-        _listeners.push(fn);
-    }
-
-    return {
-        init,
-        getActive,
-        complete,
-        endDay,
-        getCompletedCount,
-        getTotalCount,
-        getDayCount,
-        isReady,
-        onUpdate,
-    };
+    return { init, getActive, complete, getCompletedCount,
+             getTotalCount, getDayCount, isReady, onUpdate };
 
 })();

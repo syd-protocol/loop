@@ -1285,12 +1285,10 @@ body.corrupted::after {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   STEP 4 — LIFE DIRECTIVES
-   Directive cards inside the System Window.
-   Clean, readable, tap-to-complete. Completed cards grey out.
+   STEP 4 — LIFE DIRECTIVES — tabbed view
 ════════════════════════════════════════════════════════════════════ */
 
-/* ── Directives header row ───────────────────────────────────────── */
+/* Header row */
 .sw-dir-header {
     display: flex;
     justify-content: space-between;
@@ -1298,78 +1296,103 @@ body.corrupted::after {
     margin-bottom: 6px;
 }
 
-.sw-dir-count {
+.sw-dir-meta {
     font-family: var(--font-mono);
-    font-size: 12px;
-    font-weight: bold;
-    color: var(--loop-cyan);
+    font-size: 9px;
     letter-spacing: 1px;
-}
-
-.sw-dir-day {
-    font-family: var(--font-mono);
-    font-size: 9px;
-    letter-spacing: 2px;
     color: var(--stagnation-grey);
-    margin: 4px 0 10px;
 }
 
-/* Progress bar for directive completion */
-.sw-dir-progress {
-    margin-bottom: 12px;
-    height: 4px;
+/* Overall progress bar */
+.sw-dir-progress { margin-bottom: 10px; height: 3px; }
+
+/* ── Tabs ────────────────────────────────────────────────────────── */
+.sw-dir-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px;
 }
 
-/* ── Stat group ──────────────────────────────────────────────────── */
-.sw-dir-group {
-    margin-bottom: 12px;
-}
-
-.sw-dir-stat-label {
-    display: inline-block;
-    font-family: var(--font-mono);
-    font-size: 9px;
-    letter-spacing: 2px;
-    color: var(--stagnation-grey);
-    margin-bottom: 5px;
-    text-transform: uppercase;
-}
-
-/* ── Directive card ──────────────────────────────────────────────── */
-.sw-dir-card {
-    background: rgba(0, 242, 255, 0.04);
-    border: 1px solid rgba(0, 242, 255, 0.15);
+.sw-dir-tab {
+    flex: 1;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(74,77,94,0.4);
     border-radius: 2px;
-    padding: 8px 10px;
-    margin-bottom: 5px;
+    color: var(--stagnation-grey);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 6px 0 4px;
     cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
-    user-select: none;
-    -webkit-user-select: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    min-height: 44px;
+    justify-content: center;
 }
 
-.sw-dir-card:hover:not(.sw-dir-done),
-.sw-dir-card:focus-visible:not(.sw-dir-done) {
-    background: rgba(0, 242, 255, 0.08);
-    border-color: rgba(0, 242, 255, 0.4);
-    outline: none;
+.sw-dir-tab:hover {
+    background: rgba(255,255,255,0.06);
+    color: var(--loop-cyan);
 }
 
-/* Completed state */
+.sw-dir-tab.active {
+    border-color: var(--tab-colour, var(--loop-cyan));
+    color: var(--tab-colour, var(--loop-cyan));
+    background: rgba(0,242,255,0.06);
+}
+
+.sw-dir-tab.all-done {
+    border-color: rgba(0, 168, 120, 0.5);
+    color: var(--dexterity);
+    background: rgba(0, 168, 120, 0.06);
+}
+
+/* Badge */
+.sw-dir-badge {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    letter-spacing: 0;
+    color: var(--stagnation-grey);
+    background: rgba(255,255,255,0.04);
+    border-radius: 2px;
+    padding: 1px 4px;
+}
+
+.sw-dir-badge.badge-done {
+    color: var(--dexterity);
+    background: rgba(0,168,120,0.15);
+}
+
+/* ── Directive cards ─────────────────────────────────────────────── */
+.sw-dir-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.sw-dir-card {
+    background: rgba(0,242,255,0.04);
+    border: 1px solid rgba(0,242,255,0.12);
+    border-radius: 2px;
+    padding: 9px 10px;
+    transition: background 0.15s;
+}
+
 .sw-dir-card.sw-dir-done {
-    background: rgba(255, 255, 255, 0.02);
-    border-color: rgba(74, 77, 94, 0.3);
-    cursor: default;
-    opacity: 0.6;
+    background: rgba(255,255,255,0.02);
+    border-color: rgba(74,77,94,0.25);
+    opacity: 0.55;
 }
 
-/* ── Card internals ──────────────────────────────────────────────── */
 .sw-dir-card-top {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 4px;
     gap: 6px;
+    margin-bottom: 5px;
 }
 
 .sw-dir-title {
@@ -1389,7 +1412,6 @@ body.corrupted::after {
 .sw-dir-tier {
     font-family: var(--font-mono);
     font-size: 8px;
-    letter-spacing: 1px;
     color: var(--stagnation-grey);
     flex-shrink: 0;
 }
@@ -1397,69 +1419,62 @@ body.corrupted::after {
 .sw-dir-reward {
     font-family: var(--font-mono);
     font-size: 9px;
-    letter-spacing: 1px;
     color: var(--execution-gold);
     flex-shrink: 0;
 }
 
-.sw-dir-desc {
+/* Brief text (the mission statement) */
+.sw-dir-brief {
     font-family: var(--font-mono);
     font-size: 9px;
     letter-spacing: 0.5px;
     color: #6a8a98;
-    line-height: 1.55;
-    margin-bottom: 6px;
+    line-height: 1.6;
+    margin-bottom: 7px;
 }
 
-.sw-dir-done .sw-dir-desc {
-    display: none;
-}
+.sw-dir-done .sw-dir-brief { display: none; }
 
-/* ── Complete button ─────────────────────────────────────────────── */
+/* Complete button */
 .sw-dir-complete-btn {
     display: block;
     width: 100%;
     background: transparent;
-    border: 1px solid rgba(0, 242, 255, 0.3);
+    border: 1px solid rgba(0,242,255,0.25);
     border-radius: 2px;
     color: var(--loop-cyan);
     font-family: var(--font-mono);
     font-size: 9px;
     letter-spacing: 2px;
-    padding: 5px 0;
+    padding: 6px 0;
     cursor: pointer;
+    min-height: 34px;
     transition: background 0.15s, border-color 0.15s;
-    min-height: 32px;
 }
 
-.sw-dir-complete-btn:hover {
-    background: rgba(0, 242, 255, 0.1);
-    border-color: rgba(0, 242, 255, 0.6);
-}
+.sw-dir-complete-btn:hover  { background: rgba(0,242,255,0.08); border-color: rgba(0,242,255,0.5); }
+.sw-dir-complete-btn:active { background: rgba(0,242,255,0.15); }
 
-.sw-dir-complete-btn:active {
-    background: rgba(0, 242, 255, 0.18);
-}
-
-/* ── End day button ──────────────────────────────────────────────── */
-.sw-end-day-btn {
+/* ── Reset button ────────────────────────────────────────────────── */
+.sw-reset-btn {
     display: block;
     width: 100%;
     margin-top: 10px;
     background: transparent;
-    border: 1px solid rgba(230, 59, 46, 0.3);
+    border: 1px solid rgba(230,59,46,0.25);
     border-radius: 2px;
-    color: var(--strength);
+    color: rgba(230,59,46,0.7);
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 9px;
     letter-spacing: 2px;
-    padding: 8px 0;
+    padding: 7px 0;
     cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
     min-height: var(--tap-target);
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
-.sw-end-day-btn:hover {
-    background: rgba(230, 59, 46, 0.08);
-    border-color: rgba(230, 59, 46, 0.6);
+.sw-reset-btn:hover {
+    background: rgba(230,59,46,0.07);
+    border-color: rgba(230,59,46,0.6);
+    color: var(--strength);
 }
