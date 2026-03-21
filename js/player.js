@@ -19,27 +19,18 @@ const Player = (() => {
 
     /* ── Sprite constants ───────────────────────────────────────── */
     /*
-       player.png layout: default (frames left-to-right, directions top-to-bottom)
-       frameWidth: 176, frameHeight: 192
-       8 frames per direction — full smooth walk cycle
-       Row 0: walk-down (front)  Row 1: walk-up (back)
-       Row 2: walk-left          Row 3: walk-right
-       Rendered at 28×32px in the world (natural portrait ratio, centred in 32×32 tile)
+       Player is drawn by SpritePainter (js/sprite-painter.js).
+       No PNG loading — canvas primitives only. No transparency artifacts.
+       RENDER_W/H = 32 = one tile. Walk cycle: 8 frames, 8fps.
     */
-    const SPRITE_KEY  = 'player';
-    const RENDER_W    = 32;   // tile size — collision and camera use this
-    const RENDER_H    = 32;   // tile size — collision and camera use this
+    const RENDER_W    = 32;   // one tile — matches tileSize
+    const RENDER_H    = 32;   // one tile — matches tileSize
     const WALK_FRAMES = 8;
     const WALK_FPS    = 8;
-    const WALK_MS     = 1000 / WALK_FPS;   // ms per animation frame
-
-    const DIR_ROW = { down: 0, up: 1, left: 2, right: 3 };
+    const WALK_MS     = 1000 / WALK_FPS;
 
     /* ── Private state ──────────────────────────────────────────── */
-    let _img    = null;
-    let _fw     = 176;
-    let _fh     = 192;
-    let _ready  = false;
+    let _ready  = false;   /* SpritePainter needs no async loading */
 
     let _x      = 0;     // world pixel position (top-left of sprite)
     let _y      = 0;
@@ -57,15 +48,7 @@ const Player = (() => {
     let _transitionCooldown = 0;  // ms — prevents instant re-trigger
     let _keyboardLoggedOnce = false;
 
-    /* ── Image loader ───────────────────────────────────────────── */
-    function _loadImage(src) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload  = () => resolve(img);
-            img.onerror = () => reject(new Error(`Player: cannot load ${src}`));
-            img.src = src;
-        });
-    }
+
 
     /* ── BFS Pathfinder ─────────────────────────────────────────── */
     /*
@@ -299,15 +282,11 @@ const Player = (() => {
 
     /* ── Public API ─────────────────────────────────────────────── */
 
-    async function init(spriteMap) {
-        const entry = spriteMap[SPRITE_KEY];
-        if (!entry) throw new Error('Player: missing sprite-map entry for "player"');
-        _fw  = entry.frameWidth;
-        _fh  = entry.frameHeight;
-        _img = await _loadImage(entry.src);
+    function init(spriteMap) {
+        /* SpritePainter draws the player via canvas — no PNG needed */
         _initInput();
         _ready = true;
-        console.log(`[Player] Ready — ${entry.src} (frame ${_fw}×${_fh})`);
+        console.log('[Player] Ready — canvas-drawn via SpritePainter');
     }
 
     function setSpawn(col, row) {
@@ -336,23 +315,14 @@ const Player = (() => {
     }
 
     function draw(ctx, camera) {
-        if (!_ready || !_img) return;
+        if (!_ready) return;
 
-        const srcX  = _frameIndex * _fw;
-        const srcY  = (DIR_ROW[_facing] ?? 0) * _fh;
         const destX = Math.round(_x - camera.x);
         const destY = Math.round(_y - camera.y);
 
-        /* Preserve sprite's natural portrait proportions (source 176x192).
-           Drawing squished into a square creates distortion and edge artifacts.
-           We draw at the natural ratio (28x32) centred within the tile. */
-        const drawH  = RENDER_H;
-        const drawW  = Math.round(drawH * (_fw / _fh));   // ~28px at 32 tile
-        const offsetX = Math.round((RENDER_W - drawW) / 2);
-
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(_img, srcX, srcY, _fw, _fh,
-            destX + offsetX, destY, drawW, drawH);
+        /* Draw player via SpritePainter — no PNG, no transparency box */
+        SpritePainter.player(ctx, destX, destY, RENDER_W, RENDER_H,
+            _facing, _frameIndex);
 
         /* Tap destination indicator — cyan tile outline */
         if (_pathTarget) {
