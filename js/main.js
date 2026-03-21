@@ -283,6 +283,10 @@ async function init() {
         /* Initialise System Window */
         SystemWindow.init();
 
+        /* Initialise Life Directive system — Step 4 */
+        await Quests.init();
+        console.log(`[init] Quests ready. ${Quests.getTotalCount()} directives for day 1.`);
+
         G.ready    = true;
         G.lastTime = performance.now();
 

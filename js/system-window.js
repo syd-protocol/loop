@@ -239,6 +239,77 @@ const SystemWindow = (() => {
         `);
     }
 
+    /* ── Directives section ─────────────────────────────────────── */
+    function _directivesHTML() {
+        if (typeof Quests === 'undefined' || !Quests.isReady()) {
+            return _card(`<p class="syd-line dim">[ DIRECTIVES LOADING ]</p>`);
+        }
+
+        const active    = Quests.getActive();
+        const done      = Quests.getCompletedCount();
+        const total     = Quests.getTotalCount();
+        const dayCount  = Quests.getDayCount();
+
+        /* Group by stat */
+        const STAT_LABELS = {
+            intelligence: 'INT', strength: 'STR',
+            charisma: 'CHA',     dexterity: 'DEX'
+        };
+        const STAT_ORDER = ['intelligence', 'strength', 'charisma', 'dexterity'];
+
+        const groups = {};
+        for (const entry of active) {
+            const s = entry.quest.stat;
+            if (!groups[s]) groups[s] = [];
+            groups[s].push(entry);
+        }
+
+        const progressPct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+        let html = `
+            <div class="sw-dir-header">
+                <span class="sw-section-title" id="sw-dir-title"></span>
+                <span class="sw-dir-count">${done}/${total}</span>
+            </div>
+            <div class="sw-bar-track sw-dir-progress">
+                <div class="sw-bar-fill dexterity" data-pct="${progressPct}"
+                     style="width:0%"><div class="sw-shimmer"></div></div>
+            </div>
+            <div class="sw-dir-day">DAY ${dayCount}</div>`;
+
+        for (const stat of STAT_ORDER) {
+            const entries = groups[stat] || [];
+            if (!entries.length) continue;
+
+            html += `<div class="sw-dir-group">
+                <span class="sw-dir-stat-label">${STAT_LABELS[stat]}</span>`;
+
+            for (const entry of entries) {
+                const q    = entry.quest;
+                const done = entry.completed;
+                html += `
+                <div class="sw-dir-card${done ? ' sw-dir-done' : ''}"
+                     data-quest-id="${q.id}"
+                     ${done ? '' : 'role="button" tabindex="0"'}>
+                    <div class="sw-dir-card-top">
+                        <span class="sw-dir-title">${q.title}</span>
+                        ${done
+                            ? `<span class="sw-dir-reward">+${q.statDelta} ${STAT_LABELS[q.stat]}</span>`
+                            : `<span class="sw-dir-tier">T${q.tier}</span>`}
+                    </div>
+                    <p class="sw-dir-desc">${q.desc.substring(0, 90)}${q.desc.length > 90 ? '…' : ''}</p>
+                    ${!done ? `<button class="sw-dir-complete-btn" data-quest-id="${q.id}">COMPLETE ✓</button>` : ''}
+                </div>`;
+            }
+
+            html += `</div>`;
+        }
+
+        html += `<button class="sw-end-day-btn" id="sw-end-day">[ END DAY ]</button>`;
+
+        return _card(html);
+    }
+
     /* ── Footer card ────────────────────────────────────────────── */
     function _footerHTML() {
         return _card(`
@@ -277,6 +348,7 @@ const SystemWindow = (() => {
         _body.innerHTML = `
             ${_identityHTML()}
             ${_vitalHTML()}
+            ${_directivesHTML()}
             ${_statsHTML()}
             ${_footerHTML()}`;
 
@@ -297,11 +369,42 @@ const SystemWindow = (() => {
         ], () => {
             _animateBars();
             _bindTips();
+            _bindDirectives();
             if (momLabel)   _type(momLabel,   '[ MOMENTUM ]',  14);
             if (streakEl)   _type(streakEl,   streakTxt,       12);
             if (statsTitle) setTimeout(() => _type(statsTitle, '[ STATS ]', 16), 200);
             if (footer)     setTimeout(() => _type(footer,     '[ SYSTEM STANDING BY ]', 14), 500);
         });
+    }
+
+    /* ── Bind directive buttons ────────────────────────────────── */
+    function _bindDirectives() {
+        if (!_body) return;
+
+        /* Typewrite the directives header */
+        const dirTitle = _body.querySelector('#sw-dir-title');
+        if (dirTitle) _type(dirTitle, '[ DIRECTIVES ]', 14);
+
+        /* Complete buttons */
+        _body.querySelectorAll('.sw-dir-complete-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const id = btn.dataset.questId;
+                if (typeof Quests !== 'undefined') {
+                    Quests.complete(id);
+                    _render();   /* re-render to show updated state */
+                }
+            });
+        });
+
+        /* End day button */
+        const endDayBtn = _body.querySelector('#sw-end-day');
+        if (endDayBtn) {
+            endDayBtn.addEventListener('click', () => {
+                if (typeof Quests !== 'undefined') Quests.endDay();
+                _render();
+            });
+        }
     }
 
     /* ── Public API ─────────────────────────────────────────────── */

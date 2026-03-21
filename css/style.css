@@ -1283,3 +1283,183 @@ body.corrupted::after {
     user-select: none;
     -webkit-user-select: none;
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   STEP 4 — LIFE DIRECTIVES
+   Directive cards inside the System Window.
+   Clean, readable, tap-to-complete. Completed cards grey out.
+════════════════════════════════════════════════════════════════════ */
+
+/* ── Directives header row ───────────────────────────────────────── */
+.sw-dir-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+}
+
+.sw-dir-count {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: bold;
+    color: var(--loop-cyan);
+    letter-spacing: 1px;
+}
+
+.sw-dir-day {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--stagnation-grey);
+    margin: 4px 0 10px;
+}
+
+/* Progress bar for directive completion */
+.sw-dir-progress {
+    margin-bottom: 12px;
+    height: 4px;
+}
+
+/* ── Stat group ──────────────────────────────────────────────────── */
+.sw-dir-group {
+    margin-bottom: 12px;
+}
+
+.sw-dir-stat-label {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--stagnation-grey);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+
+/* ── Directive card ──────────────────────────────────────────────── */
+.sw-dir-card {
+    background: rgba(0, 242, 255, 0.04);
+    border: 1px solid rgba(0, 242, 255, 0.15);
+    border-radius: 2px;
+    padding: 8px 10px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.sw-dir-card:hover:not(.sw-dir-done),
+.sw-dir-card:focus-visible:not(.sw-dir-done) {
+    background: rgba(0, 242, 255, 0.08);
+    border-color: rgba(0, 242, 255, 0.4);
+    outline: none;
+}
+
+/* Completed state */
+.sw-dir-card.sw-dir-done {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(74, 77, 94, 0.3);
+    cursor: default;
+    opacity: 0.6;
+}
+
+/* ── Card internals ──────────────────────────────────────────────── */
+.sw-dir-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+    gap: 6px;
+}
+
+.sw-dir-title {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--loop-cyan);
+    flex: 1;
+    line-height: 1.4;
+}
+
+.sw-dir-done .sw-dir-title {
+    text-decoration: line-through;
+    color: var(--stagnation-grey);
+}
+
+.sw-dir-tier {
+    font-family: var(--font-mono);
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: var(--stagnation-grey);
+    flex-shrink: 0;
+}
+
+.sw-dir-reward {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--execution-gold);
+    flex-shrink: 0;
+}
+
+.sw-dir-desc {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.5px;
+    color: #6a8a98;
+    line-height: 1.55;
+    margin-bottom: 6px;
+}
+
+.sw-dir-done .sw-dir-desc {
+    display: none;
+}
+
+/* ── Complete button ─────────────────────────────────────────────── */
+.sw-dir-complete-btn {
+    display: block;
+    width: 100%;
+    background: transparent;
+    border: 1px solid rgba(0, 242, 255, 0.3);
+    border-radius: 2px;
+    color: var(--loop-cyan);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 5px 0;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    min-height: 32px;
+}
+
+.sw-dir-complete-btn:hover {
+    background: rgba(0, 242, 255, 0.1);
+    border-color: rgba(0, 242, 255, 0.6);
+}
+
+.sw-dir-complete-btn:active {
+    background: rgba(0, 242, 255, 0.18);
+}
+
+/* ── End day button ──────────────────────────────────────────────── */
+.sw-end-day-btn {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    background: transparent;
+    border: 1px solid rgba(230, 59, 46, 0.3);
+    border-radius: 2px;
+    color: var(--strength);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    padding: 8px 0;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    min-height: var(--tap-target);
+}
+
+.sw-end-day-btn:hover {
+    background: rgba(230, 59, 46, 0.08);
+    border-color: rgba(230, 59, 46, 0.6);
+}
