@@ -56,6 +56,9 @@
         <!-- Map transition fade overlay -->
         <div id="transition-overlay"></div>
 
+        <!-- Zoom indicator -->
+        <div id="zoom-indicator">[ ZOOMED OUT ]</div>
+
         <!-- Dev overlay — remove before ship -->
         <div id="dev-overlay">
             <span id="dev-fps">--fps</span>
@@ -66,6 +69,9 @@
 
     <!-- ── SCRIPTS ─────────────────────────────────────────────────── -->
     <!-- Load order matters — main.js must come last -->
+    <script src="js/boot.js"></script>
+    <script src="js/tile-painter.js"></script>
+    <script src="js/sprite-painter.js"></script>
     <script src="js/world.js"></script>
     <script src="js/player.js"></script>
     <script src="js/npc.js"></script>
