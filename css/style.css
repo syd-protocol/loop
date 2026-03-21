@@ -822,3 +822,274 @@ body.corrupted::after {
 #btn-system.needs-attention {
     animation: sw-btn-pulse 1.8s ease-in-out infinite;
 }
+
+/* ── BOOT SEQUENCE — INTERACTIVE ELEMENTS ───────────────────────── */
+
+/* Name input row */
+.boot-input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 4px 0;
+}
+
+.boot-prompt-arrow {
+    color: var(--loop-cyan);
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+#boot-name-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--loop-cyan);
+    color: var(--loop-cyan);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 3px;
+    padding: 4px 2px;
+    outline: none;
+    caret-color: var(--loop-cyan);
+    text-transform: uppercase;
+    flex: 1;
+    min-width: 0;
+}
+
+#boot-name-input::placeholder {
+    color: var(--stagnation-grey);
+    letter-spacing: 2px;
+}
+
+#boot-name-input:focus {
+    border-bottom-color: rgba(0, 242, 255, 0.8);
+}
+
+@keyframes boot-input-shake {
+    0%, 100% { transform: translateX(0); }
+    20%       { transform: translateX(-4px); }
+    40%       { transform: translateX(4px); }
+    60%       { transform: translateX(-3px); }
+    80%       { transform: translateX(3px); }
+}
+
+.boot-input-error {
+    animation: boot-input-shake 0.35s ease;
+    border-bottom-color: var(--strength) !important;
+}
+
+/* Confirm button (mobile tap) */
+.boot-submit-btn {
+    display: block;
+    margin: 8px 0;
+    background: transparent;
+    border: 1px solid var(--loop-cyan);
+    color: var(--loop-cyan);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 6px 16px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: background 0.15s;
+}
+
+.boot-submit-btn:hover,
+.boot-submit-btn:active {
+    background: rgba(0, 242, 255, 0.1);
+}
+
+/* Boot continue prompt */
+.boot-continue {
+    color: var(--stagnation-grey) !important;
+    animation: boot-blink 1.2s ease-in-out infinite;
+    letter-spacing: 2px;
+}
+
+/* Class options */
+.boot-class-option {
+    padding: 10px 0;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+    padding-left: 10px;
+    transition: border-color 0.15s, background 0.15s;
+    border-radius: 2px;
+    line-height: 1.8;
+}
+
+.boot-class-option:hover {
+    background: rgba(0, 242, 255, 0.04);
+    border-left-color: var(--cls-colour, var(--loop-cyan));
+}
+
+.boot-class-option.boot-class-selected {
+    border-left-color: var(--cls-colour, var(--loop-cyan));
+    background: rgba(0, 242, 255, 0.06);
+}
+
+.boot-class-key {
+    color: var(--stagnation-grey);
+    font-size: 11px;
+    letter-spacing: 2px;
+}
+
+.boot-class-name {
+    font-size: 12px;
+    letter-spacing: 3px;
+    font-weight: bold;
+}
+
+.boot-class-desc {
+    display: block;
+    color: var(--stagnation-grey);
+    font-size: 10px;
+    letter-spacing: 1px;
+    margin-top: 2px;
+    padding-left: 44px;
+}
+
+/* ── Boot terminal — name input ─────────────────────────────────── */
+#boot-input-area {
+    margin-top: 16px;
+}
+
+.boot-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 2px;
+    flex-wrap: wrap;
+}
+
+.boot-input-prefix {
+    color: var(--loop-cyan);
+    white-space: nowrap;
+}
+
+.boot-name-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--loop-cyan);
+    color: var(--loop-cyan);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 2px;
+    outline: none;
+    width: 160px;
+    caret-color: var(--loop-cyan);
+    text-transform: uppercase;
+}
+
+.boot-name-input::placeholder {
+    color: var(--stagnation-grey);
+    opacity: 0.6;
+}
+
+.boot-name-input.boot-input-error {
+    border-bottom-color: var(--strength);
+    color: var(--strength);
+    animation: boot-shake 0.3s ease;
+}
+
+@keyframes boot-shake {
+    0%, 100% { transform: translateX(0); }
+    25%       { transform: translateX(-4px); }
+    75%       { transform: translateX(4px); }
+}
+
+.boot-confirm-btn {
+    background: transparent;
+    border: 1px solid var(--loop-cyan);
+    color: var(--loop-cyan);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+
+.boot-confirm-btn:hover {
+    background: rgba(0, 242, 255, 0.1);
+}
+
+.boot-input-echo {
+    color: #5a7a88;
+}
+
+/* ── Boot terminal — class selection ────────────────────────────── */
+.boot-class-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.boot-class-btn {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--cls-colour, var(--panel-border));
+    padding: 10px 14px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s, border-color 0.15s;
+    font-family: var(--font-mono);
+    position: relative;
+    overflow: hidden;
+}
+
+.boot-class-btn:hover {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: var(--cls-colour, var(--panel-border-hot));
+}
+
+.boot-class-key {
+    color: var(--cls-colour, var(--loop-cyan));
+    font-size: 13px;
+    letter-spacing: 2px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding-top: 1px;
+}
+
+.boot-class-name {
+    color: var(--cls-colour, var(--loop-cyan));
+    font-size: 13px;
+    letter-spacing: 3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding-top: 1px;
+}
+
+.boot-class-desc {
+    color: #5a7a88;
+    font-size: 10px;
+    letter-spacing: 1px;
+    line-height: 1.6;
+    padding-top: 3px;
+}
+
+/* Scan sweep on hover */
+.boot-class-btn::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.04), transparent);
+    transition: left 0.35s ease;
+    pointer-events: none;
+}
+.boot-class-btn:hover::after { left: 150%; }
+
+/* ── Boot line — prompt blink ───────────────────────────────────── */
+.boot-prompt {
+    color: var(--loop-cyan);
+    animation: boot-blink 0.9s step-end infinite;
+    letter-spacing: 2px;
+    margin-top: 12px;
+}

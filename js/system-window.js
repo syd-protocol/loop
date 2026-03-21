@@ -217,28 +217,22 @@ const SystemWindow = (() => {
         return `
             <div class="sw-section sw-header">
                 <p class="syd-line syd-new" id="sw-greeting"></p>
+                ${G.player.name ? `<p class="syd-line dim" id="sw-operative"></p>` : ''}
                 <p class="syd-line dim"    id="sw-location"></p>
                 <p class="syd-line dim"    id="sw-class-line"></p>
             </div>`;
     }
 
     /* ── Class selection ─────────────────────────────────────────── */
+    /* Class is now selected during the boot onboarding sequence (boot.js).
+       This fallback renders if the system window is somehow opened before
+       the boot sequence has set a class — e.g. during development. */
     function _classSelectHTML() {
         return `
             <div class="sw-section">
-                <p class="syd-line syd-new" id="sw-fc-header"></p>
-                <p class="syd-line dim"     id="sw-fc-body"></p>
-            </div>
-            <div class="sw-class-grid">
-                ${Object.values(CLASSES).map(cls => `
-                    <button class="sw-class-btn" data-class="${cls.id}"
-                            style="--cls-colour:${cls.colour}">
-                        <span class="sw-class-icon">${cls.icon}</span>
-                        <span class="sw-class-name">${cls.name}</span>
-                        <span class="sw-class-desc">${cls.desc}</span>
-                        <span class="sw-class-select-hint">[ TAP TO SELECT ]</span>
-                    </button>
-                `).join('')}
+                <p class="syd-line syd-new">[ BOOT SEQUENCE INCOMPLETE ]</p>
+                <p class="syd-line dim">Complete the onboarding terminal to select your class.</p>
+                <p class="syd-line dim">Refresh the page if needed.</p>
             </div>`;
     }
 
@@ -253,17 +247,8 @@ const SystemWindow = (() => {
         const streak   = Stats.getStreak();
 
         if (!_classChosen) {
+            /* Class not yet set — show fallback (boot sequence handles this) */
             _body.innerHTML = _classSelectHTML();
-            /* Typewrite the first contact text */
-            const fcHeader = _body.querySelector('#sw-fc-header');
-            const fcBody   = _body.querySelector('#sw-fc-body');
-            if (fcHeader && fcBody) {
-                _typeSequence([
-                    [fcHeader, '[ FIRST CONTACT ]', 22],
-                    [fcBody,   'SELECT YOUR CLASS. ONE CHOICE. PERMANENT.', 14],
-                ]);
-            }
-            _bindClassButtons();
             return;
         }
 
@@ -296,12 +281,16 @@ const SystemWindow = (() => {
         const streak_s    = Stats.getStreak();
         const streakTxt   = streak_s === 0 ? 'NO STREAK' : `DAY ${streak_s} STREAK`;
 
-        _typeSequence([
-            [greeting,  _nextGreeting(),       20],
-            [location,  `LOCATION: ${mapName}`, 14],
-            [classLine, rankStr,                12],
-            [hpLabel,   Stats.isCorrupted() ? '[ CORRUPTED ]' : '[ HP ]', 16],
-        ], () => {
+        const operative = _body.querySelector('#sw-operative');
+        const _typeItems = [[greeting, _nextGreeting(), 20]];
+        if (operative && G.player.name) {
+            _typeItems.push([operative, `OPERATIVE: ${G.player.name.toUpperCase()}`, 14]);
+        }
+        _typeItems.push([location,  `LOCATION: ${mapName}`, 14]);
+        _typeItems.push([classLine, rankStr, 12]);
+        _typeItems.push([hpLabel,   Stats.isCorrupted() ? '[ CORRUPTED ]' : '[ HP ]', 16]);
+
+        _typeSequence(_typeItems, () => {
             /* After header types, animate bars and continue typing */
             _animateBars();
             if (momLabel)    _typeInto(momLabel,    '[ MOMENTUM ]', 14);
@@ -312,24 +301,15 @@ const SystemWindow = (() => {
     }
 
     /* ── Class button binding ────────────────────────────────────── */
-    function _bindClassButtons() {
-        _body.querySelectorAll('.sw-class-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const cls      = btn.dataset.class;
-                G.player.class = cls;
-                G.player.rank  = CLASSES[cls].ranks[0];
-                _classChosen   = true;
-                console.log(`[SystemWindow] Class selected: ${cls}`);
-                _render();
-            });
-        });
-    }
+    /* Class selection is handled by boot.js — this is a no-op fallback */
+    function _bindClassButtons() {}
 
     /* ── Public API ─────────────────────────────────────────────── */
 
     function init() {
         _panel = document.getElementById('system-window');
         _body  = document.getElementById('system-window-body');
+        /* Class is set by boot.js onboarding — read from G.player.class */
         _classChosen = !!G.player.class;
 
         window.addEventListener('keydown', e => {
