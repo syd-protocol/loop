@@ -82,7 +82,7 @@ body {
     image-rendering: -moz-crisp-edges;
 
     display: block;
-    background: #68c040;   /* warm grass — matches world exterior */
+    background: var(--system-black);   /* system black — never shows during play */
 }
 
 /* ── UI OVERLAY ───────────────────────────────────────────────────── */
@@ -538,4 +538,287 @@ body.corrupted::after {
     overflow: hidden;
     clip: rect(0 0 0 0);
     white-space: nowrap;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   BOOT SEQUENCE OVERLAY
+════════════════════════════════════════════════════════════════════ */
+
+#boot-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--system-black);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.8s ease;
+}
+
+#boot-overlay.boot-fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#boot-inner {
+    width: min(360px, 90vw);
+    max-height: 80vh;
+    overflow: hidden;
+    position: relative;
+}
+
+#boot-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    overflow: hidden;
+}
+
+.boot-line {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 2px;
+    line-height: 1.6;
+    white-space: pre;
+}
+
+.boot-blank  { height: 8px; }
+.boot-title  { color: var(--loop-cyan); font-size: 18px; letter-spacing: 6px; font-weight: bold; }
+.boot-cyan   { color: var(--loop-cyan); }
+.boot-dim    { color: #5a7a88; }
+.boot-warning { color: var(--strength); }
+.boot-gold   { color: var(--execution-gold); letter-spacing: 3px; }
+.boot-large  { font-size: 14px; letter-spacing: 4px; }
+
+#boot-cursor {
+    display: inline-block;
+    color: var(--loop-cyan);
+    font-size: 14px;
+    animation: boot-blink 0.7s step-end infinite;
+    margin-top: 8px;
+}
+
+@keyframes boot-blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   SYSTEM WINDOW — HI-TECH REWORK
+════════════════════════════════════════════════════════════════════ */
+
+/* Panel opening flash */
+@keyframes sw-open-flash {
+    0%   { opacity: 0; transform: translateY(-4px) scaleY(0.96); }
+    40%  { opacity: 1; transform: translateY(0)    scaleY(1.01); }
+    100% { opacity: 1; transform: translateY(0)    scaleY(1); }
+}
+
+#system-window.sw-opening {
+    animation: sw-open-flash 0.25s ease forwards;
+}
+
+/* CRT scanline texture on the panel itself */
+#system-window::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0, 242, 255, 0.018) 3px,
+        rgba(0, 242, 255, 0.018) 4px
+    );
+    pointer-events: none;
+    z-index: 1;
+    border-radius: var(--panel-radius);
+}
+
+/* Corner bracket decorations */
+#system-window::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--panel-radius);
+    background:
+        /* top-left corner */
+        linear-gradient(to right,  var(--loop-cyan) 8px, transparent 8px) 0 0 / 8px 1px no-repeat,
+        linear-gradient(to bottom, var(--loop-cyan) 8px, transparent 8px) 0 0 / 1px 8px no-repeat,
+        /* top-right corner */
+        linear-gradient(to left,   var(--loop-cyan) 8px, transparent 8px) 100% 0 / 8px 1px no-repeat,
+        linear-gradient(to bottom, var(--loop-cyan) 8px, transparent 8px) 100% 0 / 1px 8px no-repeat,
+        /* bottom-left corner */
+        linear-gradient(to right,  var(--loop-cyan) 8px, transparent 8px) 0 100% / 8px 1px no-repeat,
+        linear-gradient(to top,    var(--loop-cyan) 8px, transparent 8px) 0 100% / 1px 8px no-repeat,
+        /* bottom-right corner */
+        linear-gradient(to left,   var(--loop-cyan) 8px, transparent 8px) 100% 100% / 8px 1px no-repeat,
+        linear-gradient(to top,    var(--loop-cyan) 8px, transparent 8px) 100% 100% / 1px 8px no-repeat;
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* Ensure panel body is above scanline/corner overlays */
+#system-window-body,
+.panel-header {
+    position: relative;
+    z-index: 3;
+}
+
+/* Shimmer animation inside stat bars */
+.stat-bar-shimmer {
+    position: absolute;
+    top: 0; left: -60%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(
+        to right,
+        transparent 0%,
+        rgba(255,255,255,0.25) 50%,
+        transparent 100%
+    );
+    animation: bar-shimmer 2.5s ease-in-out infinite;
+}
+
+@keyframes bar-shimmer {
+    0%   { left: -60%; }
+    60%  { left: 120%; }
+    100% { left: 120%; }
+}
+
+.stat-bar-fill {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Stat bar glow — each bar glows its own colour */
+.stat-bar-fill.intelligence { box-shadow: 0 0 6px rgba(26,107,255,0.5); }
+.stat-bar-fill.strength     { box-shadow: 0 0 6px rgba(230,59,46,0.5); }
+.stat-bar-fill.charisma     { box-shadow: 0 0 6px rgba(155,93,229,0.5); }
+.stat-bar-fill.dexterity    { box-shadow: 0 0 6px rgba(0,168,120,0.5); }
+.stat-bar-fill.luck         { box-shadow: 0 0 6px rgba(244,196,48,0.5); }
+.sw-hp-fill                 { box-shadow: 0 0 8px rgba(0,168,120,0.6); }
+
+/* Typewriter cursor at end of active typing */
+.sw-typing::after {
+    content: '▮';
+    color: var(--loop-cyan);
+    animation: boot-blink 0.5s step-end infinite;
+    margin-left: 2px;
+}
+
+/* Blink cursor on footer line */
+.sw-blink-cursor.sw-typed::after {
+    content: ' ▮';
+    color: var(--loop-cyan);
+    animation: boot-blink 0.8s step-end infinite;
+}
+
+/* Row label flex layout */
+.sw-row-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 4px;
+}
+
+/* Streak label */
+.sw-streak-label {
+    display: block;
+    font-size: var(--font-size-xs);
+    letter-spacing: 2px;
+    color: var(--execution-gold);
+    margin-top: 4px;
+    min-height: 14px;
+}
+
+/* Corrupted state bar */
+.sw-corrupted {
+    color: var(--strength) !important;
+    animation: sw-corrupt-pulse 1s ease-in-out infinite;
+}
+@keyframes sw-corrupt-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.5; }
+}
+
+/* Class selection — reworked buttons */
+.sw-class-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.sw-class-icon {
+    font-size: 18px;
+    color: var(--cls-colour, var(--loop-cyan));
+    display: block;
+    margin-bottom: 4px;
+}
+
+.sw-class-select-hint {
+    display: block;
+    font-size: var(--font-size-xs);
+    letter-spacing: 2px;
+    color: var(--stagnation-grey);
+    margin-top: 6px;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.sw-class-btn:hover .sw-class-select-hint,
+.sw-class-btn:focus-visible .sw-class-select-hint {
+    opacity: 1;
+    color: var(--cls-colour, var(--loop-cyan));
+}
+
+/* Scan sweep on class button hover */
+.sw-class-btn::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+        to right,
+        transparent,
+        rgba(255,255,255,0.06),
+        transparent
+    );
+    transition: left 0.3s ease;
+    pointer-events: none;
+}
+.sw-class-btn:hover::after {
+    left: 150%;
+}
+
+/* ── ZOOM INDICATOR ──────────────────────────────────────────────── */
+#zoom-indicator {
+    position: absolute;
+    bottom: calc(var(--ui-padding) + 24px);
+    right: var(--ui-padding);
+    font-size: var(--font-size-xs);
+    letter-spacing: 2px;
+    color: var(--loop-cyan);
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    padding: 3px 8px;
+    border-radius: var(--panel-radius);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+#zoom-indicator.visible {
+    opacity: 1;
+}
+
+/* ── SYSTEM WINDOW BUTTON — pulse when class not chosen ─────────── */
+@keyframes sw-btn-pulse {
+    0%, 100% { border-color: var(--panel-border); box-shadow: none; }
+    50% {
+        border-color: rgba(0,242,255,0.7);
+        box-shadow: 0 0 10px rgba(0,242,255,0.3);
+    }
+}
+#btn-system.needs-attention {
+    animation: sw-btn-pulse 1.8s ease-in-out infinite;
 }

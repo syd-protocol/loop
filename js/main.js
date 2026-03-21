@@ -61,6 +61,9 @@ const G = {
     /* Flags */
     ready:    false,    // True after all assets loaded
     paused:   false,
+
+    /* Zoom */
+    zoom:     1.0,      // 1.0 = normal, <1.0 = zoomed out
 };
 
 /* ── CANVAS SETUP ────────────────────────────────────────────────── */
@@ -101,6 +104,41 @@ function resizeCanvas() {
         `canvas=${CANVAS_W}×${internalH} internal ` +
         `css=${cssW}×${cssH}px scale=${scale.toFixed(3)}`
     );
+}
+
+/* ── ZOOM TOGGLE ────────────────────────────────────────────────── */
+/*
+   Z key or double-tap toggles between normal (1.0) and zoomed-out (0.55).
+   Implementation: CSS transform scale on the canvas element.
+   The game renders at full internal resolution — zoom is purely visual.
+   Camera and collision are unaffected.
+*/
+let _zoomTimeout = null;
+
+function setZoom(level) {
+    G.zoom = level;
+    G.canvas.style.transform = level === 1.0
+        ? 'translate(-50%, -50%)'
+        : `translate(-50%, -50%) scale(${level})`;
+    /* Show/hide zoom indicator */
+    const ind = document.getElementById('zoom-indicator');
+    if (ind) {
+        if (level < 1.0) {
+            ind.classList.add('visible');
+        } else {
+            ind.classList.remove('visible');
+        }
+    }
+}
+
+function toggleZoom() {
+    const next = G.zoom === 1.0 ? 0.55 : 1.0;
+    setZoom(next);
+    /* Auto-restore after 3s if zoomed out */
+    if (next < 1.0) {
+        clearTimeout(_zoomTimeout);
+        _zoomTimeout = setTimeout(() => setZoom(1.0), 3000);
+    }
 }
 
 /* ── CAMERA ──────────────────────────────────────────────────────── */
@@ -177,7 +215,7 @@ function render() {
     ctx.imageSmoothingEnabled = false;
 
     /* Clear full internal canvas (height varies with viewport) */
-    ctx.fillStyle = '#68c040';   /* warm grass — no dark void at map edges */
+    ctx.fillStyle = '#0A0B10';   /* system black — clear before world draw */
     ctx.fillRect(0, 0, G.viewW, G.viewH);
 
     /* World tiles */
@@ -197,6 +235,20 @@ function initSystemWindowToggle() {
     });
     document.getElementById('btn-system-close').addEventListener('click', () => {
         SystemWindow.close();
+    });
+    /* Z key — zoom toggle */
+    window.addEventListener('keydown', e => {
+        if (e.key === 'z' || e.key === 'Z') toggleZoom();
+    });
+    /* Double-tap canvas — zoom toggle on mobile */
+    let _lastTap = 0;
+    document.getElementById('game-canvas').addEventListener('touchend', e => {
+        const now = Date.now();
+        if (now - _lastTap < 300) {
+            e.preventDefault();
+            toggleZoom();
+        }
+        _lastTap = now;
     });
 }
 
@@ -252,8 +304,21 @@ async function init() {
         G.ready    = true;
         G.lastTime = performance.now();
 
-        console.log('[init] ✓ Ready. Game loop starting.');
+        console.log('[init] ✓ Ready. Starting boot sequence.');
+        /* Start game loop immediately (renders behind boot overlay) */
         requestAnimationFrame(tick);
+        /* Play boot sequence — game world renders underneath */
+        Boot.play(() => {
+            console.log('[Boot] Complete. Game live.');
+            /* TODO (Step 3b): If no class chosen, auto-open System Window
+               to class selection. Boot sequence → class select flow.
+               See boot.js for full discussion of options. */
+            /* For now: pulse the system window button if class not chosen */
+            if (!G.player.class) {
+                const btn = document.getElementById('btn-system');
+                if (btn) btn.classList.add('needs-attention');
+            }
+        });
 
     } catch (err) {
         console.error('[init] ✗ Failed:', err);
