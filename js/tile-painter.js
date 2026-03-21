@@ -23,8 +23,8 @@ const TilePainter = (() => {
         bedSheet:       '#3a4a6a',
         bedPillow:      '#c8d0e0',
         bedFrame:       '#1a2a40',
-        shelfBase:      '#1a1a1a',
-        shelfBoard:     '#2a1a0a',
+        shelfBase:      '#2a1408',   /* dark warm brown wood — not pure black */
+        shelfBoard:     '#3a1e08',   /* slightly lighter warm brown shelf board */
         shelfBooks:     ['#e63b2e','#1a6bff','#9b5de5','#00a878','#f4c430','#e07030','#30a0e0','#d04080'],
         doorBase:       '#8a5a20',
         doorFrame:      '#5a3a10',
@@ -109,37 +109,60 @@ const TilePainter = (() => {
     }
 
     function paintDesk(ctx, px, py, s) {
-        /* Dark desk base with glowing cyan monitor */
-        rect(ctx, px, py, s, s, C.deskBase);
-        /* Desk surface */
-        rect(ctx, px + 2, py + Math.floor(s * 0.45), s - 4, Math.floor(s * 0.12), C.deskLeg);
-        /* Monitor screen — bright cyan glow */
-        const sw = Math.floor(s * 0.65);
-        const sh = Math.floor(s * 0.38);
-        const sx = px + Math.floor((s - sw) / 2);
-        const sy = py + Math.floor(s * 0.06);
-        rect(ctx, sx - 1, sy - 1, sw + 2, sh + 2, C.deskLeg);  /* frame */
-        rect(ctx, sx, sy, sw, sh, C.deskScreen);                 /* screen */
-        /* Screen glow gradient effect — lighter centre */
-        ctx.globalAlpha = 0.4;
-        rect(ctx, sx + 2, sy + 2, sw - 4, Math.floor(sh * 0.4), C.windowGlow);
+        /* Desk — warm wood surface with a glowing monitor on top */
+
+        /* Desk legs — dark */
+        rect(ctx, px + 2,       py + Math.floor(s * 0.7), Math.floor(s * 0.12), Math.floor(s * 0.28), C.deskLeg);
+        rect(ctx, px + s - Math.floor(s * 0.14), py + Math.floor(s * 0.7), Math.floor(s * 0.12), Math.floor(s * 0.28), C.deskLeg);
+
+        /* Desk surface — warm wood tone, clearly a surface */
+        rect(ctx, px + 1, py + Math.floor(s * 0.38), s - 2, Math.floor(s * 0.34), '#8a5a28');
+        /* Surface edge highlight — lighter strip at front */
+        rect(ctx, px + 1, py + Math.floor(s * 0.68), s - 2, 2, '#a06828');
+
+        /* Monitor — sits on the desk surface */
+        const mw = Math.floor(s * 0.6);
+        const mh = Math.floor(s * 0.32);
+        const mx = px + Math.floor((s - mw) / 2);
+        const my = py + Math.floor(s * 0.04);
+        /* Monitor bezel */
+        rect(ctx, mx - 1, my - 1, mw + 2, mh + 2, C.deskLeg);
+        /* Screen — cyan glow */
+        rect(ctx, mx, my, mw, mh, C.deskScreen);
+        /* Screen inner highlight */
+        ctx.globalAlpha = 0.35;
+        rect(ctx, mx + 2, my + 2, mw - 4, Math.floor(mh * 0.4), C.windowGlow);
         ctx.globalAlpha = 1.0;
-        /* Keyboard */
-        rect(ctx, sx, sy + sh + 3, sw, 3, C.wallBase);
+        /* Monitor stand */
+        rect(ctx, px + Math.floor(s * 0.44), py + Math.floor(s * 0.35), Math.floor(s * 0.12), Math.floor(s * 0.06), C.deskLeg);
+
+        /* Interaction indicator — small glowing dot, top-right corner */
+        ctx.globalAlpha = 0.75;
+        circle(ctx, px + s - 4, py + 4, 2, '#00f2ff');
+        ctx.globalAlpha = 1.0;
     }
 
     function paintBed(ctx, px, py, s) {
-        /* Bed frame + pillow + blanket */
-        rect(ctx, px, py, s, s, C.bedFrame);
-        /* Mattress */
-        rect(ctx, px + 2, py + 2, s - 4, s - 4, C.bedBase);
-        /* Pillow */
-        rect(ctx, px + 3, py + 3, s - 6, Math.floor(s * 0.28), C.bedPillow);
-        /* Blanket */
-        rect(ctx, px + 3, py + Math.floor(s * 0.38), s - 6, Math.floor(s * 0.55), C.bedSheet);
-        /* Blanket fold line */
-        ctx.globalAlpha = 0.4;
-        line(ctx, px + 3, py + Math.floor(s * 0.42), px + s - 3, py + Math.floor(s * 0.42), C.bedPillow, 1);
+        /* Bed — warm wooden frame, white pillow, coloured blanket */
+
+        /* Outer frame — warm dark wood */
+        rect(ctx, px, py, s, s, '#3a2010');
+        /* Headboard */
+        rect(ctx, px + 1, py + 1, s - 2, Math.floor(s * 0.18), '#4a2a14');
+
+        /* Mattress base — slightly off-white */
+        rect(ctx, px + 2, py + Math.floor(s * 0.16), s - 4, s - Math.floor(s * 0.2), '#d8cfc0');
+
+        /* Blanket — teal/blue, takes up lower 2/3 */
+        rect(ctx, px + 2, py + Math.floor(s * 0.38), s - 4, Math.floor(s * 0.58), C.bedSheet);
+        /* Blanket fold highlight */
+        rect(ctx, px + 2, py + Math.floor(s * 0.38), s - 4, Math.floor(s * 0.06), '#4a6a8a');
+
+        /* Pillow — clearly white, upper portion */
+        rect(ctx, px + 4, py + Math.floor(s * 0.18), s - 8, Math.floor(s * 0.22), '#f0ece4');
+        /* Pillow shadow bottom */
+        ctx.globalAlpha = 0.25;
+        rect(ctx, px + 4, py + Math.floor(s * 0.34), s - 8, 2, '#000');
         ctx.globalAlpha = 1.0;
     }
 
@@ -166,6 +189,11 @@ const TilePainter = (() => {
                 rect(ctx, bx, by, bookW - 1, bookH, colour);
             }
         }
+
+        /* Interaction indicator */
+        ctx.globalAlpha = 0.75;
+        circle(ctx, px + s - 4, py + 4, 2, '#00f2ff');
+        ctx.globalAlpha = 1.0;
     }
 
     function paintDoor(ctx, px, py, s) {
