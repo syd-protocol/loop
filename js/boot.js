@@ -249,6 +249,16 @@ const Boot = (() => {
     }
 
     function _showClassSelect(name) {
+        /* Clear the terminal — fresh screen for class selection.
+           Everything fits in one viewport, no scrolling needed. */
+        _lines.innerHTML = '';
+        _clearInputArea();
+
+        /* Re-add a compact header so context is clear */
+        _addLine('[ CLASS ASSIGNMENT ]',      'boot-cyan',    CHAR_SLOW);
+        _addLine('CHOOSE ONCE. PERMANENT.',   'boot-warning', CHAR_FAST);
+        _addLine('',                          'boot-blank',   0);
+
         const area = _overlay.querySelector('#boot-input-area');
         area.innerHTML = `
             <div class="boot-class-grid">
@@ -309,18 +319,29 @@ const Boot = (() => {
     function _phaseBrief(name, cls) {
         _phase = 'brief';
 
+        /* Clear screen — fresh page for the briefing */
+        _lines.innerHTML = '';
+        _clearInputArea();
+
         _addLines([
-            { text: '',                                        cls: 'boot-blank',   speed: 0,         gap: 0 },
-            { text: '[ MISSION BRIEFING ]',                    cls: 'boot-cyan',    speed: CHAR_SLOW,  gap: 300 },
-            { text: 'THE STAGNATION FACTION FEEDS ON INACTION.', cls: 'boot-dim',   speed: CHAR_FAST,  gap: 200 },
-            { text: 'COMPLETE DAILY DIRECTIVES. BUILD YOUR STATS.', cls: 'boot-dim', speed: CHAR_FAST, gap: 200 },
-            { text: 'WIN ENCOUNTERS. RANK UP YOUR CAREER.',    cls: 'boot-dim',     speed: CHAR_FAST,  gap: 200 },
-            { text: 'LET HP REACH ZERO. YOU ENTER CORRUPTED STATE.', cls: 'boot-warning', speed: CHAR_FAST, gap: 300 },
-            { text: '',                                        cls: 'boot-blank',   speed: 0,         gap: 0 },
-            { text: '[ YOUR SYSTEM WINDOW TRACKS ALL PROGRESS. ]', cls: 'boot-gold', speed: CHAR_SLOW, gap: 200 },
-            { text: '[ TAP ⊞ — TOP RIGHT — TO ACCESS IT ANY TIME. ]', cls: 'boot-gold', speed: CHAR_SLOW, gap: 500 },
-            { text: '',                                        cls: 'boot-blank',   speed: 0,         gap: 0 },
-            { text: `[ ENTERING THE LOOP, ${name}. ]`,        cls: 'boot-cyan boot-large', speed: CHAR_SLOW, gap: 0 },
+            { text: '[ MISSION BRIEFING ]',                        cls: 'boot-cyan',    speed: CHAR_SLOW,  gap: 280 },
+            { text: '',                                            cls: 'boot-blank',   speed: 0,          gap: 0 },
+            { text: 'THE STAGNATION FACTION FEEDS ON INACTION.',   cls: 'boot-dim',     speed: CHAR_FAST,  gap: 160 },
+            { text: 'COMPLETE DAILY DIRECTIVES. BUILD YOUR STATS.', cls: 'boot-dim',    speed: CHAR_FAST,  gap: 160 },
+            { text: 'WIN ENCOUNTERS. RANK UP YOUR CAREER.',        cls: 'boot-dim',     speed: CHAR_FAST,  gap: 160 },
+            { text: 'LET HP HIT ZERO. YOU ENTER CORRUPTED STATE.', cls: 'boot-warning', speed: CHAR_FAST,  gap: 280 },
+            { text: '',                                            cls: 'boot-blank',   speed: 0,          gap: 0 },
+            { text: '[ FIELD GUIDE ]',                             cls: 'boot-cyan',    speed: CHAR_SLOW,  gap: 200 },
+            { text: 'TAP ANYWHERE TO MOVE.',                       cls: 'boot-dim',     speed: CHAR_FAST,  gap: 120 },
+            { text: 'TAP AN NPC TO TALK.',                         cls: 'boot-dim',     speed: CHAR_FAST,  gap: 120 },
+            { text: 'TAP THE LAPTOP TO ACCESS CAREER BOARD.',      cls: 'boot-dim',     speed: CHAR_FAST,  gap: 120 },
+            { text: 'COLLECT SKILL SCROLLS TO UNLOCK ABILITIES.',  cls: 'boot-dim',     speed: CHAR_FAST,  gap: 120 },
+            { text: 'ENCOUNTER A DRIFTER. ENGAGE OR AVOID.',       cls: 'boot-dim',     speed: CHAR_FAST,  gap: 280 },
+            { text: '',                                            cls: 'boot-blank',   speed: 0,          gap: 0 },
+            { text: '[ SYSTEM WINDOW: TAP ⊞  TOP RIGHT ]',        cls: 'boot-gold',    speed: CHAR_SLOW,  gap: 160 },
+            { text: 'TRACKS STATS. HP. MOMENTUM. DIRECTIVES.',     cls: 'boot-gold',    speed: CHAR_FAST,  gap: 500 },
+            { text: '',                                            cls: 'boot-blank',   speed: 0,          gap: 0 },
+            { text: `[ ENTERING THE LOOP, ${name}. ]`,             cls: 'boot-cyan boot-large', speed: CHAR_SLOW, gap: 0 },
         ], () => {
             setTimeout(() => _fadeOut(), 900);
         });
