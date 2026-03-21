@@ -32,21 +32,21 @@ const Boot = (() => {
     const CLASSES = {
         A: {
             id: 'architect', key: 'A', name: 'ARCHITECT',
-            desc: 'Technical. Precision. Systems. Pattern recognition.',
+            desc: 'Engineers. Developers. Builders. Technical founders. You solve with systems.',
             colour: '#1A6BFF',
             ranks: ['Apprentice','Coder','Engineer','Senior Engineer',
                     'Staff Engineer','Principal','Architect','Chief Architect'],
         },
         W: {
             id: 'warlord', key: 'W', name: 'WARLORD',
-            desc: 'Command. People. Coordination. Battlefield control.',
+            desc: 'Managers. Directors. Ops leads. Team builders. You win through people.',
             colour: '#9B5DE5',
             ranks: ['Intern','Coordinator','Manager','Senior Manager',
                     'Director','VP','General','Warlord'],
         },
         H: {
             id: 'herald', key: 'H', name: 'HERALD',
-            desc: 'Influence. Information. Persuasion. Words as weapons.',
+            desc: 'Marketers. Strategists. Writers. Communicators. You win through words.',
             colour: '#E63B2E',
             ranks: ['Intern','Associate','Specialist','Senior Specialist',
                     'Lead','Head','Chief','Grand Herald'],

@@ -420,7 +420,7 @@ body {
     font-family: var(--font-mono);
     font-size: 10px;
     letter-spacing: 2px;
-    color: var(--stagnation-grey);
+    color: #9ab4c4;   /* readable secondary — brighter than stagnation-grey */
 }
 
 /* ── Vital rows (HP / Momentum) ──────────────────────────────────── */
@@ -1244,6 +1244,42 @@ body.corrupted::after {
 /* JS sets opacity via style attribute during transitions.
    The transition property is applied inline by _clearScreen()
    so it only fires during screen changes, not on every render. */
-#boot-inner {
-    /* Base state — no persistent transition (JS adds it temporarily) */
+/* Boot inner: no persistent transition — applied inline by _clearScreen() */
+/* ── Stat / vital tooltips ───────────────────────────────────────── */
+#sw-tooltip {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 11, 16, 0.97);
+    border: 1px solid rgba(0, 242, 255, 0.4);
+    border-radius: 2px;
+    padding: 8px 14px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--loop-cyan);
+    line-height: 1.6;
+    max-width: 280px;
+    text-align: center;
+    pointer-events: none;
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    white-space: normal;
+}
+
+#sw-tooltip.visible { opacity: 1; }
+
+#sw-tooltip .tip-label {
+    color: var(--execution-gold);
+    letter-spacing: 2px;
+    display: block;
+    margin-bottom: 3px;
+}
+
+.sw-stat-label, .sw-vital-label {
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
 }

@@ -31,18 +31,21 @@ const SystemWindow = (() => {
         architect: {
             id: 'architect', name: 'ARCHITECT', icon: '⬡',
             colour: '#1A6BFF',
+            desc: 'Engineers. Developers. Builders. Technical founders. You solve the world with systems.',
             ranks: ['Apprentice','Coder','Engineer','Senior Engineer',
                     'Staff Engineer','Principal','Architect','Chief Architect'],
         },
         warlord: {
             id: 'warlord', name: 'WARLORD', icon: '◈',
             colour: '#9B5DE5',
+            desc: 'Managers. Directors. Ops leads. Team builders. You win through people and coordination.',
             ranks: ['Intern','Coordinator','Manager','Senior Manager',
                     'Director','VP','General','Warlord'],
         },
         herald: {
             id: 'herald', name: 'HERALD', icon: '◎',
             colour: '#E63B2E',
+            desc: 'Marketers. Strategists. Writers. Communicators. You win through words and influence.',
             ranks: ['Intern','Associate','Specialist','Senior Specialist',
                     'Lead','Head','Chief','Grand Herald'],
         },
@@ -81,6 +84,47 @@ const SystemWindow = (() => {
             _type(el, text, speed ?? 16, next);
         }
         next();
+    }
+
+    /* ── Stat / vital tooltips ─────────────────────────────────── */
+    const TIPS = {
+        'INT':  { label: 'INTELLIGENCE', text: 'How sharply you read situations. Primary stat for all career encounters.' },
+        'STR':  { label: 'STRENGTH',     text: 'Delivery and follow-through. Governs HP max and recovery rate.' },
+        'CHA':  { label: 'CHARISMA',     text: 'Influence and social reach. Unlocks NPC access at higher levels.' },
+        'DEX':  { label: 'DEXTERITY',    text: 'Adaptability. Resists debuffs. Speeds Corrupted State recovery.' },
+        'LUCK': { label: 'LUCK',         text: 'Derived stat. Average of the other four. Cannot be trained directly.' },
+        'HP':   { label: 'HP',           text: 'Your resilience. Drops when you miss days. Zero = Corrupted State.' },
+        'MOM':  { label: 'MOMENTUM',     text: 'Streak multiplier. Builds through consecutive days. Caps at 2× on day 14.' },
+    };
+
+    let _tipTimer = null;
+
+    function _showTip(key) {
+        const tip = TIPS[key];
+        if (!tip) return;
+
+        let el = document.getElementById('sw-tooltip');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'sw-tooltip';
+            document.body.appendChild(el);
+        }
+
+        el.innerHTML = `<span class="tip-label">${tip.label}</span>${tip.text}`;
+        el.classList.add('visible');
+
+        clearTimeout(_tipTimer);
+        _tipTimer = setTimeout(() => el.classList.remove('visible'), 2500);
+    }
+
+    function _bindTips() {
+        if (!_body) return;
+        _body.querySelectorAll('.sw-stat-label[data-tip]').forEach(el => {
+            el.addEventListener('pointerdown', () => _showTip(el.dataset.tip));
+        });
+        _body.querySelectorAll('.sw-vital-label[data-tip]').forEach(el => {
+            el.addEventListener('pointerdown', () => _showTip(el.dataset.tip));
+        });
     }
 
     /* ── Animate bars + count-up ────────────────────────────────── */
@@ -142,7 +186,7 @@ const SystemWindow = (() => {
 
         return _card(`
             <div class="sw-vital-row">
-                <span class="sw-vital-label${corrupt ? ' sw-corrupted' : ''}" id="sw-hp-label"></span>
+                <span class="sw-vital-label${corrupt ? ' sw-corrupted' : ''}" id="sw-hp-label" data-tip="HP"></span>
                 <span class="sw-vital-value sw-num"
                       style="color:${hpColour}"
                       data-val="${hp}">${hp}</span>
@@ -155,7 +199,7 @@ const SystemWindow = (() => {
                 </div>
             </div>
             <div class="sw-vital-row sw-momentum-row">
-                <span class="sw-vital-label dim" id="sw-mom-label"></span>
+                <span class="sw-vital-label dim" id="sw-mom-label" data-tip="MOM"></span>
                 <span class="sw-vital-value gold">${momentum.toFixed(2)}×</span>
                 <span class="sw-vital-max sw-streak" id="sw-streak"></span>
             </div>
@@ -173,7 +217,7 @@ const SystemWindow = (() => {
         const pct = Math.min(100, value);
         return `
             <div class="sw-stat-row">
-                <span class="sw-stat-label">${label}</span>
+                <span class="sw-stat-label" data-tip="${label}">${label}</span>
                 <div class="sw-bar-track sw-stat-track">
                     <div class="sw-bar-fill ${cls}" data-pct="${pct}" style="width:0%">
                         <div class="sw-shimmer"></div>
@@ -198,10 +242,10 @@ const SystemWindow = (() => {
     /* ── Footer card ────────────────────────────────────────────── */
     function _footerHTML() {
         return _card(`
-            <p class="sw-section-title sw-blink-cursor" id="sw-footer-title"></p>
-            <p class="syd-line dim sw-footer-hint">[ DIRECTIVES ] — STEP 4</p>
-            <p class="syd-line dim sw-footer-hint">[ SCROLLS ]    — STEP 9</p>
-            <p class="syd-line dim sw-footer-hint">[ ABILITIES ]  — STEP 10</p>
+            <p class="sw-section-title" id="sw-footer-title"></p>
+            <p class="syd-line dim sw-footer-hint">[ DIRECTIVES ] — COMING SOON</p>
+            <p class="syd-line dim sw-footer-hint">[ SCROLLS ]    — COMING SOON</p>
+            <p class="syd-line dim sw-footer-hint">[ ABILITIES ]  — COMING SOON</p>
         `);
     }
 
@@ -252,10 +296,11 @@ const SystemWindow = (() => {
             [hpLabel,    Stats.isCorrupted() ? '[ CORRUPTED ]' : '[ HP ]', 16],
         ], () => {
             _animateBars();
+            _bindTips();
             if (momLabel)   _type(momLabel,   '[ MOMENTUM ]',  14);
             if (streakEl)   _type(streakEl,   streakTxt,       12);
             if (statsTitle) setTimeout(() => _type(statsTitle, '[ STATS ]', 16), 200);
-            if (footer)     setTimeout(() => _type(footer,     '[ AWAITING DIRECTIVE ]', 14), 500);
+            if (footer)     setTimeout(() => _type(footer,     '[ SYSTEM STANDING BY ]', 14), 500);
         });
     }
 
