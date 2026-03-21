@@ -561,17 +561,26 @@ body.corrupted::after {
 }
 
 #boot-inner {
-    width: min(360px, 90vw);
-    max-height: 80vh;
+    width: min(400px, calc(100vw - 48px));
+    max-height: calc(100vh - 80px);
     overflow: hidden;
     position: relative;
+    padding: 0 20px;
+    box-sizing: border-box;
 }
 
 #boot-lines {
     display: flex;
     flex-direction: column;
     gap: 6px;
-    overflow: hidden;
+    overflow-y: auto;
+    max-height: calc(100vh - 180px);
+    /* Hide scrollbar visually — scroll is driven by JS _scroll() */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+#boot-lines::-webkit-scrollbar {
+    display: none;
 }
 
 .boot-line {
@@ -579,7 +588,8 @@ body.corrupted::after {
     font-size: 12px;
     letter-spacing: 2px;
     line-height: 1.6;
-    white-space: pre;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .boot-blank  { height: 8px; }
