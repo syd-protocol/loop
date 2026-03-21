@@ -1,65 +1,69 @@
 /* ── boot.js ─────────────────────────────────────────────────────────
    Full onboarding terminal. Runs once on first visit (sessionStorage).
-   Skipped on return visits unless class is missing.
+   Skipped on return visits if class is already set.
 
-   Four phases — state machine:
-     PHASE_BOOT     — auto-types system lines, waits for tap/Enter
-     PHASE_IDENTITY — user enters their operative name
-     PHASE_CLASS    — user selects Architect / Warlord / Herald
-     PHASE_BRIEF    — key game info types out, then fades to world
+   Flow:
+     Opening cursor blink (1.2s)
+     → Phase 1: Boot lines auto-type → [ CONTINUE ]
+     → Phase 2: Name input (confirmed by button / Enter)
+                → identity confirmed lines → [ CONTINUE ]
+     → Phase 3: Class select (clear screen, user taps card)
+                → class confirmed lines → [ CONTINUE ]
+     → Phase 4: Briefing lines auto-type → [ CONTINUE ]
+     → Fade out → world
+
+   [ CONTINUE ] gates use _waitForContinue() — tap overlay or press Enter.
+   Name input and class selection have their own confirm actions.
 
    Public API:
-     Boot.play(onComplete)  — runs the sequence, calls onComplete when done
-     Boot.skip()            — clears state, calls onComplete immediately
+     Boot.play(onComplete)
+     Boot.skip()
 ──────────────────────────────────────────────────────────────────── */
 
 const Boot = (() => {
 
-    /* ── Constants ──────────────────────────────────────────────── */
-    const CHAR_FAST   = 14;   /* ms/char — SYD lines */
-    const CHAR_SLOW   = 22;   /* ms/char — important lines */
-    const CHAR_TITLE  = 60;   /* ms/char — title, dramatic */
-    const LINE_GAP    = 320;  /* ms pause between line groups */
+    /* ── Timing constants ───────────────────────────────────────── */
+    const CHAR_FAST  = 14;
+    const CHAR_SLOW  = 24;
+    const CHAR_TITLE = 65;
+    const LINE_GAP   = 260;
 
+    /* ── Class definitions ──────────────────────────────────────── */
     const CLASSES = {
         A: {
-            id:     'architect',
-            key:    'A',
-            name:   'ARCHITECT',
-            desc:   'Technical. Precision. Systems. Pattern recognition.',
+            id: 'architect', key: 'A', name: 'ARCHITECT',
+            desc: 'Technical. Precision. Systems. Pattern recognition.',
             colour: '#1A6BFF',
-            ranks:  ['Apprentice','Coder','Engineer','Senior Engineer',
-                     'Staff Engineer','Principal','Architect','Chief Architect'],
+            ranks: ['Apprentice','Coder','Engineer','Senior Engineer',
+                    'Staff Engineer','Principal','Architect','Chief Architect'],
         },
         W: {
-            id:     'warlord',
-            key:    'W',
-            name:   'WARLORD',
-            desc:   'Command. People. Coordination. Battlefield control.',
+            id: 'warlord', key: 'W', name: 'WARLORD',
+            desc: 'Command. People. Coordination. Battlefield control.',
             colour: '#9B5DE5',
-            ranks:  ['Intern','Coordinator','Manager','Senior Manager',
-                     'Director','VP','General','Warlord'],
+            ranks: ['Intern','Coordinator','Manager','Senior Manager',
+                    'Director','VP','General','Warlord'],
         },
         H: {
-            id:     'herald',
-            key:    'H',
-            name:   'HERALD',
-            desc:   'Influence. Information. Persuasion. Words as weapons.',
+            id: 'herald', key: 'H', name: 'HERALD',
+            desc: 'Influence. Information. Persuasion. Words as weapons.',
             colour: '#E63B2E',
-            ranks:  ['Intern','Associate','Specialist','Senior Specialist',
-                     'Lead','Head','Chief','Grand Herald'],
+            ranks: ['Intern','Associate','Specialist','Senior Specialist',
+                    'Lead','Head','Chief','Grand Herald'],
         },
     };
 
-    /* ── State ──────────────────────────────────────────────────── */
+    /* ── Runtime state ──────────────────────────────────────────── */
     let _overlay    = null;
+    let _inner      = null;
     let _lines      = null;
     let _onComplete = null;
-    let _phase      = 'boot';
-    let _locked     = false;   /* true while typing — blocks advance */
+    let _locked     = false;    /* true while text is typing */
+    let _advanceKey = null;     /* keydown listener for current gate */
+    let _advanceTap = null;     /* pointerdown listener for current gate */
 
-    /* ── DOM helpers ─────────────────────────────────────────────── */
-    function _buildOverlay() {
+    /* ── Build overlay DOM ──────────────────────────────────────── */
+    function _build() {
         _overlay = document.createElement('div');
         _overlay.id = 'boot-overlay';
         _overlay.innerHTML = `
@@ -68,18 +72,51 @@ const Boot = (() => {
                 <div id="boot-input-area"></div>
             </div>`;
         document.body.appendChild(_overlay);
+        _inner = _overlay.querySelector('#boot-inner');
         _lines = _overlay.querySelector('#boot-lines');
     }
 
+    /* ── Scroll to bottom ───────────────────────────────────────── */
+    function _scroll() {
+        _lines.scrollTop = _lines.scrollHeight;
+    }
+
+    /* ── Clear input area ───────────────────────────────────────── */
+    function _clearInput() {
+        const a = _overlay.querySelector('#boot-input-area');
+        if (a) a.innerHTML = '';
+    }
+
+    /* ── Smooth screen transition ───────────────────────────────── */
+    /*
+       Fades the inner content to opacity 0, clears it,
+       then fades back in. Used between screens so there's
+       no jarring cut.
+    */
+    function _clearScreen(onDone) {
+        _inner.style.transition = 'opacity 0.28s ease';
+        _inner.style.opacity    = '0';
+        setTimeout(() => {
+            _lines.innerHTML = '';
+            _clearInput();
+            _inner.style.opacity = '1';
+            setTimeout(() => {
+                _inner.style.transition = '';
+                if (onDone) onDone();
+            }, 220);
+        }, 290);
+    }
+
+    /* ── Add a single line with typewriter effect ───────────────── */
     function _addLine(text, cls, speed, onDone) {
         const p = document.createElement('p');
         p.className = `boot-line ${cls || ''}`;
         _lines.appendChild(p);
-        _scrollBottom();
+        _scroll();
 
         if (!text) {
             p.innerHTML = '&nbsp;';
-            if (onDone) setTimeout(onDone, 60);
+            if (onDone) setTimeout(onDone, 40);
             return p;
         }
 
@@ -88,7 +125,7 @@ const Boot = (() => {
         function step() {
             if (i < text.length) {
                 p.textContent += text[i++];
-                _scrollBottom();
+                _scroll();
                 setTimeout(step, speed || CHAR_FAST);
             } else {
                 _locked = false;
@@ -99,83 +136,115 @@ const Boot = (() => {
         return p;
     }
 
+    /* ── Add multiple lines in sequence ────────────────────────── */
     function _addLines(items, onAllDone) {
-        /* items: [{text, cls, speed, gap}] */
         let idx = 0;
         function next() {
-            if (idx >= items.length) {
-                if (onAllDone) onAllDone();
-                return;
-            }
+            if (idx >= items.length) { if (onAllDone) onAllDone(); return; }
             const item = items[idx++];
-            const gap  = item.gap ?? LINE_GAP;
             _addLine(item.text, item.cls, item.speed, () => {
-                setTimeout(next, gap);
+                setTimeout(next, item.gap ?? LINE_GAP);
             });
         }
         next();
     }
 
-    function _addPrompt(text) {
-        /* Blinking continue prompt */
+    /* ── Wait for tap or Enter to continue ─────────────────────── */
+    /*
+       Shows the [ CONTINUE ] prompt.
+       Listens for tap on overlay (not on inputs/buttons) or Enter/Space.
+       Removes listeners and prompt when triggered, then calls onContinue.
+    */
+    function _waitForContinue(onContinue) {
+        /* Don't show prompt until typing is done */
+        const tryShow = () => {
+            if (_locked) { setTimeout(tryShow, 80); return; }
+            _showContinuePrompt(onContinue);
+        };
+        tryShow();
+    }
+
+    function _showContinuePrompt(onContinue) {
         const p = document.createElement('p');
         p.className  = 'boot-line boot-prompt';
-        p.id         = 'boot-continue-prompt';
-        p.textContent = text;
+        p.textContent = '[ PRESS ENTER OR TAP TO CONTINUE ▮ ]';
         _lines.appendChild(p);
-        _scrollBottom();
-        return p;
+        _scroll();
+
+        function _cleanup() {
+            window.removeEventListener('keydown', _advanceKey);
+            _overlay.removeEventListener('pointerdown', _advanceTap);
+            _advanceKey = null;
+            _advanceTap = null;
+            p.remove();
+        }
+
+        _advanceKey = (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            _cleanup();
+            onContinue();
+        };
+
+        _advanceTap = (e) => {
+            /* Don't fire on interactive elements */
+            if (e.target.tagName === 'INPUT'  ||
+                e.target.tagName === 'BUTTON' ||
+                e.target.closest('#boot-input-area')) return;
+            _cleanup();
+            onContinue();
+        };
+
+        window.addEventListener('keydown', _advanceKey);
+        _overlay.addEventListener('pointerdown', _advanceTap);
     }
 
-    function _scrollBottom() {
-        _lines.scrollTop = _lines.scrollHeight;
-    }
+    /* ── Opening cursor blink ───────────────────────────────────── */
+    function _openingCursor(onDone) {
+        const cursor = document.createElement('div');
+        cursor.id = 'boot-opening-cursor';
+        cursor.textContent = '▮';
+        _lines.appendChild(cursor);
 
-    function _clearInputArea() {
-        const area = _overlay.querySelector('#boot-input-area');
-        if (area) area.innerHTML = '';
-    }
-
-    /* ── Phase 1: BOOT ───────────────────────────────────────────── */
-    function _phaseBoot() {
-        _phase = 'boot';
-
-        _addLines([
-            { text: '',                                    cls: 'boot-blank',   speed: 0,          gap: 0 },
-            { text: '/loop  v0.1.0',                       cls: 'boot-title',   speed: CHAR_TITLE,  gap: 400 },
-            { text: '',                                    cls: 'boot-blank',   speed: 0,          gap: 0 },
-            { text: '[ INITIALISING NEURAL LINK ]',        cls: 'boot-cyan',    speed: CHAR_FAST,   gap: 300 },
-            { text: '[ SCANNING OPERATIVE PROFILE... ]',   cls: 'boot-dim',     speed: CHAR_FAST,   gap: 500 },
-            { text: '[ STAGNATION FACTION: DETECTED ]',    cls: 'boot-warning', speed: CHAR_FAST,   gap: 280 },
-            { text: '[ THREAT LEVEL: ELEVATED ]',          cls: 'boot-warning', speed: CHAR_FAST,   gap: 500 },
-            { text: '',                                    cls: 'boot-blank',   speed: 0,          gap: 0 },
-            { text: '[ LIFE TRACK: LOADING ]',             cls: 'boot-dim',     speed: CHAR_FAST,   gap: 180 },
-            { text: '[ CAREER TRACK: LOADING ]',           cls: 'boot-dim',     speed: CHAR_FAST,   gap: 180 },
-            { text: '[ DIRECTIVE ENGINE: STANDBY ]',       cls: 'boot-dim',     speed: CHAR_FAST,   gap: 400 },
-            { text: '',                                    cls: 'boot-blank',   speed: 0,          gap: 0 },
-            { text: '[ SYSTEM READY ]',                    cls: 'boot-cyan boot-large', speed: CHAR_SLOW, gap: 0 },
-        ], () => {
+        setTimeout(() => {
+            cursor.style.transition = 'opacity 0.2s ease';
+            cursor.style.opacity    = '0';
             setTimeout(() => {
-                _addPrompt('[ PRESS ENTER OR TAP TO CONTINUE ▮ ]');
-                _phase = 'waiting-boot';
-            }, 500);
+                cursor.remove();
+                if (onDone) onDone();
+            }, 220);
+        }, 1200);
+    }
+
+    /* ── PHASE 1: BOOT ──────────────────────────────────────────── */
+    function _phaseBoot() {
+        _addLines([
+            { text: '',                                  cls: 'boot-blank',         speed: 0,          gap: 0   },
+            { text: '/loop  v0.1.0',                     cls: 'boot-title',         speed: CHAR_TITLE,  gap: 420 },
+            { text: '',                                  cls: 'boot-blank',         speed: 0,          gap: 0   },
+            { text: '[ INITIALISING NEURAL LINK ]',      cls: 'boot-cyan',          speed: CHAR_FAST,   gap: 280 },
+            { text: '[ SCANNING OPERATIVE PROFILE... ]', cls: 'boot-dim',           speed: CHAR_FAST,   gap: 480 },
+            { text: '[ STAGNATION FACTION: DETECTED ]',  cls: 'boot-warning',       speed: CHAR_FAST,   gap: 260 },
+            { text: '[ THREAT LEVEL: ELEVATED ]',        cls: 'boot-warning',       speed: CHAR_FAST,   gap: 480 },
+            { text: '',                                  cls: 'boot-blank',         speed: 0,          gap: 0   },
+            { text: '[ LIFE TRACK: LOADING ]',           cls: 'boot-dim',           speed: CHAR_FAST,   gap: 160 },
+            { text: '[ CAREER TRACK: LOADING ]',         cls: 'boot-dim',           speed: CHAR_FAST,   gap: 160 },
+            { text: '[ DIRECTIVE ENGINE: STANDBY ]',     cls: 'boot-dim',           speed: CHAR_FAST,   gap: 380 },
+            { text: '',                                  cls: 'boot-blank',         speed: 0,          gap: 0   },
+            { text: '[ SYSTEM READY ]',                  cls: 'boot-cyan boot-large', speed: CHAR_SLOW, gap: 0   },
+        ], () => {
+            _waitForContinue(() => _phaseIdentity());
         });
     }
 
-    /* ── Phase 2: IDENTITY ───────────────────────────────────────── */
+    /* ── PHASE 2: IDENTITY ──────────────────────────────────────── */
     function _phaseIdentity() {
-        _phase = 'identity';
-
-        /* Remove the continue prompt */
-        const prompt = document.getElementById('boot-continue-prompt');
-        if (prompt) prompt.remove();
-
         _addLines([
-            { text: '',                                       cls: 'boot-blank',  speed: 0,         gap: 0 },
-            { text: '[ OPERATIVE IDENTIFICATION REQUIRED ]',  cls: 'boot-cyan',   speed: CHAR_SLOW, gap: 300 },
-            { text: 'ENTER YOUR OPERATIVE DESIGNATION.',      cls: 'boot-dim',    speed: CHAR_FAST, gap: 0 },
+            { text: '',                                    cls: 'boot-blank', speed: 0,         gap: 0   },
+            { text: '[ OPERATIVE IDENTIFICATION REQUIRED ]', cls: 'boot-cyan',  speed: CHAR_SLOW, gap: 280 },
+            { text: 'ENTER YOUR OPERATIVE DESIGNATION.',   cls: 'boot-dim',   speed: CHAR_FAST, gap: 0   },
         ], () => {
-            setTimeout(() => _showNameInput(), 200);
+            setTimeout(() => _showNameInput(), 180);
         });
     }
 
@@ -183,82 +252,60 @@ const Boot = (() => {
         const area = _overlay.querySelector('#boot-input-area');
         area.innerHTML = `
             <div class="boot-input-row">
-                <span class="boot-input-prefix">DESIGNATION: </span>
-                <input id="boot-name-input"
-                       class="boot-name-input"
-                       type="text"
-                       maxlength="20"
-                       autocomplete="off"
-                       autocorrect="off"
-                       spellcheck="false"
-                       placeholder="TYPE YOUR NAME"
-                       aria-label="Enter your operative name" />
+                <span class="boot-input-prefix">DESIGNATION:</span>
+                <input id="boot-name-input" class="boot-name-input"
+                       type="text" maxlength="20"
+                       autocomplete="off" autocorrect="off"
+                       spellcheck="false" placeholder="TYPE YOUR NAME"
+                       aria-label="Enter operative name" />
                 <button id="boot-name-confirm" class="boot-confirm-btn">CONFIRM ▶</button>
             </div>`;
 
         const input   = area.querySelector('#boot-name-input');
         const confirm = area.querySelector('#boot-name-confirm');
-
-        /* Focus the input */
         setTimeout(() => input.focus(), 50);
 
-        function _confirmName() {
+        function _submit() {
             const name = input.value.trim().toUpperCase();
             if (!name) {
                 input.classList.add('boot-input-error');
                 setTimeout(() => input.classList.remove('boot-input-error'), 600);
                 return;
             }
-            _clearInputArea();
+            _clearInput();
             _confirmIdentity(name);
         }
 
-        confirm.addEventListener('click', _confirmName);
-        input.addEventListener('keydown', e => {
-            if (e.key === 'Enter') _confirmName();
-        });
+        confirm.addEventListener('click', _submit);
+        input.addEventListener('keydown', e => { if (e.key === 'Enter') _submit(); });
     }
 
     function _confirmIdentity(name) {
-        /* Store name */
         if (typeof G !== 'undefined') G.player.name = name;
 
         _addLines([
-            { text: `DESIGNATION: ${name}`,              cls: 'boot-input-echo', speed: CHAR_FAST,  gap: 200 },
-            { text: '[ IDENTITY CONFIRMED ]',            cls: 'boot-cyan',       speed: CHAR_SLOW,  gap: 200 },
-            { text: `WELCOME, ${name}.`,                 cls: 'boot-gold boot-large', speed: CHAR_SLOW, gap: 0 },
+            { text: `DESIGNATION: ${name}`,     cls: 'boot-input-echo',      speed: CHAR_FAST,  gap: 200 },
+            { text: '[ IDENTITY CONFIRMED ]',   cls: 'boot-cyan',            speed: CHAR_SLOW,  gap: 180 },
+            { text: `WELCOME, ${name}.`,        cls: 'boot-gold boot-large', speed: CHAR_SLOW,  gap: 0   },
         ], () => {
-            setTimeout(() => _phaseClass(name), 500);
+            _waitForContinue(() => {
+                _clearScreen(() => _phaseClass(name));
+            });
         });
     }
 
-    /* ── Phase 3: CLASS ──────────────────────────────────────────── */
+    /* ── PHASE 3: CLASS ─────────────────────────────────────────── */
     function _phaseClass(name) {
-        _phase = 'class';
-
         _addLines([
-            { text: '',                                   cls: 'boot-blank',  speed: 0,         gap: 0 },
-            { text: '[ CLASS ASSIGNMENT ]',               cls: 'boot-cyan',   speed: CHAR_SLOW, gap: 200 },
-            { text: 'SELECT YOUR OPERATIVE CLASS.',       cls: 'boot-dim',    speed: CHAR_FAST, gap: 200 },
-            { text: 'THIS DETERMINES YOUR CAREER TRACK,', cls: 'boot-dim',   speed: CHAR_FAST, gap: 80 },
-            { text: 'ENCOUNTER TYPES, AND ABILITIES.',    cls: 'boot-dim',    speed: CHAR_FAST, gap: 300 },
-            { text: 'CHOOSE ONCE.',                       cls: 'boot-warning',speed: CHAR_SLOW, gap: 0 },
+            { text: '[ CLASS ASSIGNMENT ]',              cls: 'boot-cyan',    speed: CHAR_SLOW,  gap: 200 },
+            { text: 'CHOOSE YOUR OPERATIVE CLASS.',      cls: 'boot-dim',     speed: CHAR_FAST,  gap: 100 },
+            { text: 'ONE CHOICE. PERMANENT.',            cls: 'boot-warning', speed: CHAR_SLOW,  gap: 0   },
         ], () => {
-            setTimeout(() => _showClassSelect(name), 300);
+            setTimeout(() => _showClassSelect(name), 240);
         });
     }
 
     function _showClassSelect(name) {
-        /* Clear the terminal — fresh screen for class selection.
-           Everything fits in one viewport, no scrolling needed. */
-        _lines.innerHTML = '';
-        _clearInputArea();
-
-        /* Re-add a compact header so context is clear */
-        _addLine('[ CLASS ASSIGNMENT ]',      'boot-cyan',    CHAR_SLOW);
-        _addLine('CHOOSE ONCE. PERMANENT.',   'boot-warning', CHAR_FAST);
-        _addLine('',                          'boot-blank',   0);
-
         const area = _overlay.querySelector('#boot-input-area');
         area.innerHTML = `
             <div class="boot-class-grid">
@@ -272,82 +319,77 @@ const Boot = (() => {
                 `).join('')}
             </div>`;
 
-        /* Keyboard shortcuts */
+        function _pick(key) {
+            window.removeEventListener('keydown', _onKey);
+            _clearInput();
+            _confirmClass(CLASSES[key], name);
+        }
+
         function _onKey(e) {
-            const key = e.key.toUpperCase();
-            if (CLASSES[key]) {
-                window.removeEventListener('keydown', _onKey);
-                _clearInputArea();
-                _confirmClass(CLASSES[key], name);
-            }
+            const k = e.key.toUpperCase();
+            if (CLASSES[k]) _pick(k);
         }
         window.addEventListener('keydown', _onKey);
 
-        /* Tap/click */
         area.querySelectorAll('.boot-class-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const key = btn.dataset.class;
-                window.removeEventListener('keydown', _onKey);
-                _clearInputArea();
-                _confirmClass(CLASSES[key], name);
-            });
+            btn.addEventListener('click', () => _pick(btn.dataset.class));
         });
     }
 
     function _confirmClass(cls, name) {
-        /* Store class */
         if (typeof G !== 'undefined') {
             G.player.class = cls.id;
             G.player.rank  = cls.ranks[0];
         }
 
         _addLines([
-            { text: `[ ${cls.name} ] SELECTED.`,          cls: 'boot-large',  speed: CHAR_SLOW,  gap: 200,
-              style: `color:${cls.colour}` },
-            { text: `RANK: ${cls.ranks[0]}`,              cls: 'boot-dim',    speed: CHAR_FAST,  gap: 200 },
-            { text: `CLASS ABILITIES: UNLOCK AT RANK 2.`, cls: 'boot-dim',    speed: CHAR_FAST,  gap: 0 },
+            { text: `[ ${cls.name} ] CONFIRMED.`, cls: 'boot-large',  speed: CHAR_SLOW, gap: 180 },
+            { text: `RANK: ${cls.ranks[0]}`,      cls: 'boot-dim',    speed: CHAR_FAST, gap: 160 },
+            { text: 'CLASS ABILITIES UNLOCK AT RANK 2.', cls: 'boot-dim', speed: CHAR_FAST, gap: 0 },
         ], () => {
-            /* Apply colour to class line */
-            const lines = _lines.querySelectorAll('.boot-line');
-            const classLine = lines[lines.length - 3];
-            if (classLine) classLine.style.color = cls.colour;
-            setTimeout(() => _phaseBrief(name, cls), 500);
+            /* Colour the class confirmed line */
+            const all  = _lines.querySelectorAll('.boot-line');
+            const line = all[all.length - 3];
+            if (line) line.style.color = cls.colour;
+
+            _waitForContinue(() => {
+                _clearScreen(() => _phaseBrief(name, cls));
+            });
         });
     }
 
-    /* ── Phase 4: BRIEFING ───────────────────────────────────────── */
+    /* ── PHASE 4: BRIEFING ──────────────────────────────────────── */
     function _phaseBrief(name, cls) {
-        _phase = 'brief';
-
-        /* Clear screen — fresh page for the briefing */
-        _lines.innerHTML = '';
-        _clearInputArea();
-
         _addLines([
-            { text: '[ MISSION BRIEFING ]',                        cls: 'boot-cyan',    speed: CHAR_SLOW,  gap: 280 },
-            { text: '',                                            cls: 'boot-blank',   speed: 0,          gap: 0 },
-            { text: 'THE STAGNATION FACTION FEEDS ON INACTION.',   cls: 'boot-dim',     speed: CHAR_FAST,  gap: 160 },
-            { text: 'COMPLETE DAILY DIRECTIVES. BUILD YOUR STATS.', cls: 'boot-dim',    speed: CHAR_FAST,  gap: 160 },
-            { text: 'WIN ENCOUNTERS. RANK UP YOUR CAREER.',        cls: 'boot-dim',     speed: CHAR_FAST,  gap: 160 },
-            { text: 'LET HP HIT ZERO. YOU ENTER CORRUPTED STATE.', cls: 'boot-warning', speed: CHAR_FAST,  gap: 280 },
-            { text: '',                                            cls: 'boot-blank',   speed: 0,          gap: 0 },
-            { text: '[ FIELD GUIDE ]',                             cls: 'boot-cyan',    speed: CHAR_SLOW,  gap: 200 },
-            { text: 'TAP ANYWHERE TO MOVE.',                       cls: 'boot-dim',     speed: CHAR_FAST,  gap: 120 },
-            { text: 'TAP AN NPC TO TALK.',                         cls: 'boot-dim',     speed: CHAR_FAST,  gap: 120 },
-            { text: 'TAP THE LAPTOP TO ACCESS CAREER BOARD.',      cls: 'boot-dim',     speed: CHAR_FAST,  gap: 120 },
-            { text: 'COLLECT SKILL SCROLLS TO UNLOCK ABILITIES.',  cls: 'boot-dim',     speed: CHAR_FAST,  gap: 120 },
-            { text: 'ENCOUNTER A DRIFTER. ENGAGE OR AVOID.',       cls: 'boot-dim',     speed: CHAR_FAST,  gap: 280 },
-            { text: '',                                            cls: 'boot-blank',   speed: 0,          gap: 0 },
-            { text: '[ SYSTEM WINDOW: TAP ⊞  TOP RIGHT ]',        cls: 'boot-gold',    speed: CHAR_SLOW,  gap: 160 },
-            { text: 'TRACKS STATS. HP. MOMENTUM. DIRECTIVES.',     cls: 'boot-gold',    speed: CHAR_FAST,  gap: 500 },
-            { text: '',                                            cls: 'boot-blank',   speed: 0,          gap: 0 },
-            { text: `[ ENTERING THE LOOP, ${name}. ]`,             cls: 'boot-cyan boot-large', speed: CHAR_SLOW, gap: 0 },
+            { text: '[ MISSION BRIEFING ]',                       cls: 'boot-cyan',    speed: CHAR_SLOW,  gap: 260 },
+            { text: '',                                           cls: 'boot-blank',   speed: 0,          gap: 0   },
+            { text: 'THE STAGNATION FACTION FEEDS ON INACTION.',  cls: 'boot-dim',     speed: CHAR_FAST,  gap: 140 },
+            { text: 'COMPLETE DAILY DIRECTIVES. BUILD YOUR STATS.', cls: 'boot-dim',   speed: CHAR_FAST,  gap: 140 },
+            { text: 'WIN ENCOUNTERS. RANK UP YOUR CAREER.',       cls: 'boot-dim',     speed: CHAR_FAST,  gap: 140 },
+            { text: 'LET HP HIT ZERO. CORRUPTED STATE ACTIVATES.',cls: 'boot-warning', speed: CHAR_FAST,  gap: 260 },
+            { text: '',                                           cls: 'boot-blank',   speed: 0,          gap: 0   },
+            { text: '[ FIELD GUIDE ]',                            cls: 'boot-cyan',    speed: CHAR_SLOW,  gap: 180 },
+            { text: 'TAP ANYWHERE TO MOVE.',                      cls: 'boot-dim',     speed: CHAR_FAST,  gap: 110 },
+            { text: 'TAP AN NPC TO TALK.',                        cls: 'boot-dim',     speed: CHAR_FAST,  gap: 110 },
+            { text: 'TAP THE LAPTOP TO ACCESS CAREER BOARD.',     cls: 'boot-dim',     speed: CHAR_FAST,  gap: 110 },
+            { text: 'FIND SKILL SCROLLS. UNLOCK ABILITIES.',      cls: 'boot-dim',     speed: CHAR_FAST,  gap: 110 },
+            { text: 'ENCOUNTER DRIFTERS. ENGAGE OR AVOID.',       cls: 'boot-dim',     speed: CHAR_FAST,  gap: 260 },
+            { text: '',                                           cls: 'boot-blank',   speed: 0,          gap: 0   },
+            { text: '[ SYSTEM WINDOW: TAP ⊞  TOP RIGHT ]',       cls: 'boot-gold',    speed: CHAR_SLOW,  gap: 140 },
+            { text: 'TRACKS STATS. HP. MOMENTUM. DIRECTIVES.',    cls: 'boot-gold',    speed: CHAR_FAST,  gap: 0   },
         ], () => {
-            setTimeout(() => _fadeOut(), 900);
+            _waitForContinue(() => {
+                _addLines([
+                    { text: '',                               cls: 'boot-blank',         speed: 0,         gap: 0 },
+                    { text: `[ ENTERING THE LOOP, ${name}. ]`, cls: 'boot-cyan boot-large', speed: CHAR_SLOW, gap: 0 },
+                ], () => {
+                    setTimeout(() => _fadeOut(), 800);
+                });
+            });
         });
     }
 
-    /* ── Fade out and complete ───────────────────────────────────── */
+    /* ── Fade out ───────────────────────────────────────────────── */
     function _fadeOut() {
         _overlay.classList.add('boot-fade-out');
         _overlay.addEventListener('transitionend', () => {
@@ -357,48 +399,18 @@ const Boot = (() => {
         }, { once: true });
     }
 
-    /* ── Advance on tap / Enter ─────────────────────────────────── */
-    function _bindAdvance() {
-        function _onAdvance(e) {
-            /* Only advance when waiting for input, not during typing */
-            if (_phase !== 'waiting-boot') return;
-            if (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ') return;
-            if (_locked) return;
-
-            /* Consume event */
-            e.preventDefault();
-            window.removeEventListener('keydown', _onAdvance);
-            _overlay.removeEventListener('pointerdown', _onAdvance);
-
-            _phaseIdentity();
-        }
-
-        window.addEventListener('keydown', _onAdvance);
-        _overlay.addEventListener('pointerdown', e => {
-            /* Don't trigger advance when tapping input fields or buttons */
-            if (e.target.tagName === 'INPUT'  ||
-                e.target.tagName === 'BUTTON' ||
-                e.target.closest('.boot-class-grid') ||
-                e.target.closest('.boot-input-row')) return;
-            _onAdvance(e);
-        });
-    }
-
     /* ── Public API ─────────────────────────────────────────────── */
     function play(onComplete) {
         _onComplete = onComplete;
 
-        /* Skip if already played AND class is chosen */
         const alreadyPlayed = sessionStorage.getItem('boot-played');
         const hasClass      = typeof G !== 'undefined' && G.player.class;
-        if (alreadyPlayed && hasClass) {
-            if (onComplete) onComplete();
-            return;
-        }
+        if (alreadyPlayed && hasClass) { if (onComplete) onComplete(); return; }
 
-        _buildOverlay();
-        _bindAdvance();
-        _phaseBoot();
+        _build();
+
+        /* Opening cursor blink → then boot phase */
+        _openingCursor(() => _phaseBoot());
     }
 
     function skip() {
