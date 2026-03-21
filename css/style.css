@@ -366,103 +366,229 @@ body {
     letter-spacing: 1px;
 }
 
-/* ── SYSTEM WINDOW — STEP 3 SECTIONS ────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════════
+   SYSTEM WINDOW — VISUAL REWORK
+   Inspired by SYD /terminal: name prominent, card sections,
+   numbers large, bars alive with shimmer and glow.
+════════════════════════════════════════════════════════════════════ */
 
-.sw-section {
-    margin-bottom: 14px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid rgba(74, 77, 94, 0.3);
+/* ── Panel body base ─────────────────────────────────────────────── */
+#system-window-body {
+    padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
-.sw-section:last-child {
-    border-bottom: none;
-    margin-bottom: 0;
+/* ── Section card ────────────────────────────────────────────────── */
+.sw-card {
+    background: rgba(255, 255, 255, 0.028);
+    border: 1px solid rgba(0, 242, 255, 0.1);
+    border-radius: 2px;
+    padding: 12px 14px;
+    position: relative;
 }
 
-.sw-header {
-    padding-bottom: 10px;
+/* ── Identity card ───────────────────────────────────────────────── */
+.sw-identity-name {
+    font-family: var(--font-mono);
+    font-size: 20px;
+    font-weight: bold;
+    letter-spacing: 4px;
+    color: var(--loop-cyan);
+    margin: 6px 0 8px;
+    line-height: 1.2;
 }
 
-/* HP bar — wider track */
-.sw-hp-row {
+.sw-identity-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.sw-class-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    border: 1px solid;
+    padding: 2px 8px;
+    border-radius: 2px;
+}
+
+.sw-rank-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--stagnation-grey);
+}
+
+/* ── Vital rows (HP / Momentum) ──────────────────────────────────── */
+.sw-vital-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 5px;
+}
+
+.sw-vital-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--loop-cyan);
+    flex: 1;
+    min-height: 14px;
+}
+
+.sw-vital-label.dim { color: #6a8a98; }
+
+.sw-vital-value {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: var(--loop-cyan);
+}
+
+.sw-vital-value.gold { color: var(--execution-gold); }
+
+.sw-vital-max {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--stagnation-grey);
+}
+
+.sw-momentum-row {
+    margin-top: 10px;
+}
+
+.sw-streak {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--execution-gold);
+    margin-left: auto;
+    min-height: 12px;
+}
+
+/* ── Shared bar track ────────────────────────────────────────────── */
+.sw-bar-track {
+    height: 5px;
+    background: rgba(74, 77, 94, 0.35);
+    border-radius: 1px;
+    overflow: hidden;
+    margin-bottom: 4px;
+    position: relative;
+}
+
+.sw-bar-fill {
+    height: 100%;
+    border-radius: 1px;
+    width: 0%;
+    transition: width 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Stat-specific fills and glows */
+.sw-bar-fill.intelligence { background: var(--intelligence); box-shadow: 0 0 6px rgba(26,107,255,0.5); }
+.sw-bar-fill.strength     { background: var(--strength);     box-shadow: 0 0 6px rgba(230,59,46,0.5); }
+.sw-bar-fill.charisma     { background: var(--charisma);     box-shadow: 0 0 6px rgba(155,93,229,0.5); }
+.sw-bar-fill.dexterity    { background: var(--dexterity);    box-shadow: 0 0 6px rgba(0,168,120,0.5); }
+.sw-bar-fill.luck         { background: var(--execution-gold); box-shadow: 0 0 6px rgba(244,196,48,0.5); }
+
+/* Shimmer sweep */
+.sw-shimmer {
+    position: absolute;
+    top: 0; left: -80%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent);
+    animation: sw-shimmer-anim 2.8s ease-in-out infinite;
+}
+
+@keyframes sw-shimmer-anim {
+    0%   { left: -80%; }
+    60%  { left: 130%; }
+    100% { left: 130%; }
+}
+
+/* ── Stats card ──────────────────────────────────────────────────── */
+.sw-section-title {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--loop-cyan);
+    margin-bottom: 10px;
+    min-height: 14px;
+}
+
+.sw-stat-row {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-top: 6px;
+    margin-bottom: 9px;
 }
 
-.sw-hp-track {
+.sw-stat-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: #6a8a98;
+    width: 32px;
+    flex-shrink: 0;
+}
+
+.sw-stat-track {
     flex: 1;
-    height: 8px;
+    height: 4px;
 }
 
-.sw-hp-fill {
-    height: 100%;
-    border-radius: 1px;
-    transition: width 0.5s ease;
+.sw-stat-val {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: bold;
+    width: 26px;
+    text-align: right;
+    flex-shrink: 0;
+    color: var(--loop-cyan);
 }
 
-/* Animated bars — width transitions from 0 to target */
-.sw-bar-animate {
-    transition: width 0.5s ease;
+/* ── Footer card ─────────────────────────────────────────────────── */
+.sw-footer-hint {
+    opacity: 0.35;
+    font-size: 9px;
+    letter-spacing: 1px;
+    margin-top: 4px;
 }
 
-/* Inline colour helpers used by SYD lines */
+/* ── Animations ──────────────────────────────────────────────────── */
+.sw-typing::after {
+    content: '▮';
+    color: var(--loop-cyan);
+    animation: boot-blink 0.5s step-end infinite;
+    margin-left: 2px;
+}
+
+.sw-blink-cursor.sw-typed::after {
+    content: ' ▮';
+    color: var(--loop-cyan);
+    animation: boot-blink 0.9s step-end infinite;
+}
+
+.sw-corrupted {
+    color: var(--strength) !important;
+    animation: sw-corrupt-pulse 1s ease-in-out infinite;
+}
+
+@keyframes sw-corrupt-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.45; }
+}
+
+/* Inline colour helpers */
 .syd-line .gold  { color: var(--execution-gold); }
 .syd-line.strength { color: var(--strength); }
-
-/* Footer placeholder lines */
-.sw-footer .syd-line {
-    opacity: 0.4;
-}
-
-/* ── CLASS SELECTION GRID ─────────────────────────────────────────── */
-.sw-class-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 12px;
-}
-
-.sw-class-btn {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 12px;
-    background: rgba(0, 242, 255, 0.04);
-    border: 1px solid var(--cls-colour, var(--panel-border));
-    border-radius: var(--panel-radius);
-    cursor: pointer;
-    text-align: left;
-    transition: background 0.15s, border-color 0.15s;
-    min-height: var(--tap-target);
-}
-
-.sw-class-btn:hover,
-.sw-class-btn:focus-visible {
-    background: rgba(0, 242, 255, 0.08);
-    border-color: var(--cls-colour, var(--panel-border-hot));
-    outline: none;
-}
-
-.sw-class-btn:active {
-    background: rgba(0, 242, 255, 0.14);
-}
-
-.sw-class-name {
-    font-size: var(--font-size-sm);
-    letter-spacing: 2px;
-    color: var(--cls-colour, var(--loop-cyan));
-    font-family: var(--font-mono);
-}
-
-.sw-class-desc {
-    font-size: var(--font-size-xs);
-    color: var(--stagnation-grey);
-    letter-spacing: 1px;
-    font-family: var(--font-mono);
-    line-height: 1.5;
-}
 
 /* ── MAP TRANSITION OVERLAY ─────────────────────────────────────────── */
 #transition-overlay {
